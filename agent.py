@@ -1,10 +1,13 @@
 """
-최소 파이프라인 — `판정 → 근거 조립 → 답변` (PLAN 슬라이스 5).
+파이프라인 — `판정 → 근거 조립 → 답변 → 검증` (PLAN 슬라이스 5·6).
 
-세 노드짜리 LangGraph 다. **검증·넘기기는 아직 없다** — 환각 검증은 슬라이스 6,
-넘기기 두 갈래(`out_of_scope` / `no_evidence`) 분리는 슬라이스 7이 한다. 여기서는
-판정 노드가 카테고리를 하나도 고르지 않으면 근거 없이 답변 노드로 가고, 답변 노드는
-지어내지 말고 넘기라고만 지시받는다. 두 경로가 **구분되지 않는 상태**가 이 슬라이스의 정상이다.
+네 노드짜리 LangGraph 다. 검증 노드(`verify.py`, PLAN D4·D11)가 답변의 수치·조문 번호·
+식품유형명을 주입된 근거와 대조하고, 걸리면 위반 목록을 프롬프트에 넣어 **재생성을 한 번**
+시킨다. 두 번째도 걸리면 위반을 그대로 들고 끝낸다 — 거기서 넘기기로 보내는 것은 슬라이스 7이다.
+
+**넘기기 두 갈래는 아직 없다.** 판정 노드가 카테고리를 하나도 고르지 않으면 근거 없이
+답변 노드로 가고, 답변 노드는 지어내지 말고 넘기라고만 지시받는다.
+`out_of_scope` 와 `no_evidence` 가 **구분되지 않는 상태**가 이 슬라이스의 정상이다.
 
 노드 사이로 흐르는 것은 `State` 하나뿐이고 노드는 부분 딕셔너리를 돌려준다
 (agentteam-m01 관행). 그래프는 `build_graph()` 가 매번 `StateGraph` 부터 새로 만든다 —
@@ -32,6 +35,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
 import tools
+import verify
 from tools import ToolResult
 
 load_dotenv()
@@ -61,6 +65,11 @@ class State(TypedDict, total=False):
     evidence_ids: list[str]
     answer: str
     citations: list[str]
+    attempts: int  # 답변 노드가 몇 번 돌았나. 재생성은 한 번까지 (PLAN 슬라이스 6)
+    answers: Annotated[list[str], _extend]  # 재생성 전후를 둘 다 남긴다 (완료 기준 d)
+    violations: list[dict]  # 마지막 검증에서 근거 밖으로 잡힌 표기
+    verify_ok: bool
+    verify_checked: int
     trace: Annotated[list[str], _extend]
 
 
@@ -182,7 +191,8 @@ def _answer_llm():
 
 def answer(state: State) -> dict:
     results = state.get("results", [])
-    evidence = "\n\n".join(r.text for r in results) if results else NO_EVIDENCE
+    evidence = verify.evidence_text(results) if results else NO_EVIDENCE
+    attempt = state.get("attempts", 0) + 1
 
     messages: list[tuple[str, str]] = [("system", ANSWER_SYSTEM)]
     for ex in _few_shot():
@@ -190,15 +200,59 @@ def answer(state: State) -> dict:
         messages.append(("ai", ex["a"]))
     messages.append(("human", ANSWER_USER.format(question=state["question"], evidence=evidence)))
 
+    # 재생성 — 검증 노드가 잡은 것을 그대로 보여준다. 무엇이 왜 걸렸는지 모르면
+    # 같은 말을 다시 쓴다 (m01 의 「근거를 함께 넘긴다」와 같은 발상).
+    previous = state.get("answer", "")
+    flagged = state.get("violations", [])
+    if previous and flagged:
+        report = verify.Report(
+            violations=[verify.Violation(v["kind"], v["token"], verify.canon(v["token"])) for v in flagged],
+            checked=state.get("verify_checked", 0),
+        )
+        messages.append(("ai", previous))
+        messages.append(("human", verify.regen_note(report)))
+
     text = _answer_llm().invoke(messages).content
     if isinstance(text, list):  # 일부 모델은 조각 목록으로 돌려준다
         text = "".join(part.get("text", "") for part in text if isinstance(part, dict))
+    text = text.strip()
     cited = list(dict.fromkeys(CITE.findall(text)))
+    head = "재생성" if attempt > 1 else "답변"
     return {
-        "answer": text.strip(),
+        "answer": text,
         "citations": cited,
-        "trace": [f"답변: {len(text):,}자, 인용 {len(cited)}건"],
+        "attempts": attempt,
+        "answers": [text],
+        "trace": [f"{head}: {len(text):,}자, 인용 {len(cited)}건"],
     }
+
+
+# ────────────────────────────────────────────────────────── 4. 검증
+
+# 재생성은 한 번까지. 두 번째도 걸리면 위반을 들고 끝낸다 — 넘기기는 슬라이스 7이 받는다.
+MAX_ATTEMPTS = 2
+
+
+def verify_node(state: State) -> dict:
+    results = state.get("results", [])
+    report = verify.check(
+        state.get("answer", ""),
+        verify.evidence_text(results),
+        state["question"],
+    )
+    return {
+        "violations": report.as_json(),
+        "verify_ok": report.ok,
+        "verify_checked": report.checked,
+        "trace": [f"검증({state.get('attempts', 1)}차): {report.summary()}"],
+    }
+
+
+def after_verify(state: State) -> str:
+    """통과했거나 재생성을 이미 썼으면 끝낸다."""
+    if state.get("verify_ok") or state.get("attempts", 1) >= MAX_ATTEMPTS:
+        return "end"
+    return "answer"
 
 
 # ───────────────────────────────────────────────────────────── 그래프
@@ -210,10 +264,12 @@ def build_graph():
     builder.add_node("classify", classify)
     builder.add_node("gather", gather)
     builder.add_node("answer", answer)
+    builder.add_node("verify", verify_node)
     builder.add_edge(START, "classify")
     builder.add_edge("classify", "gather")
     builder.add_edge("gather", "answer")
-    builder.add_edge("answer", END)
+    builder.add_edge("answer", "verify")
+    builder.add_conditional_edges("verify", after_verify, {"answer": "answer", "end": END})
     return builder.compile()
 
 
@@ -225,9 +281,18 @@ class Run:
     evidence_ids: list[str] = field(default_factory=list)
     answer: str = ""
     citations: list[str] = field(default_factory=list)
+    attempts: int = 1
+    answers: list[str] = field(default_factory=list)  # 재생성 전후 (완료 기준 d)
+    violations: list[dict] = field(default_factory=list)
+    verify_ok: bool = True
+    verify_checked: int = 0
     trace: list[str] = field(default_factory=list)
     results: list[ToolResult] = field(default_factory=list)
     seconds: float = 0.0
+
+    @property
+    def regenerated(self) -> bool:
+        return self.attempts > 1
 
     @property
     def valid_citations(self) -> list[str]:
@@ -252,6 +317,11 @@ def ask(question: str, graph=None) -> Run:
         evidence_ids=final.get("evidence_ids", []),
         answer=final.get("answer", ""),
         citations=final.get("citations", []),
+        attempts=final.get("attempts", 1),
+        answers=final.get("answers", []),
+        violations=final.get("violations", []),
+        verify_ok=final.get("verify_ok", True),
+        verify_checked=final.get("verify_checked", 0),
         trace=final.get("trace", []),
         results=final.get("results", []),
         seconds=time.monotonic() - started,
@@ -283,6 +353,16 @@ def show(run: Run) -> None:
         print(f"        {c.url}")
     if run.invented_citations:
         print("  ! 근거에 없는 ID 를 인용했다:", ", ".join(run.invented_citations))
+    print("─" * 70)
+    print("환각 검증:", end=" ")
+    if run.verify_ok:
+        print(f"통과 — 수치·조문·유형명 {run.verify_checked}건을 근거와 대조했다")
+    else:
+        print(f"위반 {len(run.violations)}건 (재생성 뒤에도 남았다)")
+        for v in run.violations:
+            print(f"  ! {v['kind']}「{v['token']}」— 근거에 없다")
+    if run.regenerated:
+        print(f"  재생성 1회. 첫 답변: {run.answers[0][:80]}…")
     print(f"\n조립한 근거 {len(run.evidence_ids)}청크 · {run.seconds:.1f}초")
     for line in run.trace:
         print(" ", line)
@@ -292,9 +372,12 @@ def show(run: Run) -> None:
 
 
 def run_goldenset(out: Path | None = None, limit: int | None = None) -> int:
-    """평가셋 전 문항을 흘린다 — 완료 기준 (b) 에러 0, (c) 인용 조문 포함.
+    """평가셋 전 문항을 흘린다.
 
-    채점은 하지 않는다. S1·S2 를 재는 것은 슬라이스 8이다.
+    슬라이스 5의 완료 기준(에러 0 · 근거가 있으면 인용 있음)에 슬라이스 6이 얹는 것 —
+    문항별 **위반 목록과 재생성 여부**를 기록에 남기고(b·d), 남은 위반을 눈으로 가릴 수 있게
+    출력한다(c). 남은 위반 자체는 실패로 치지 않는다 — 그 문항을 넘기기로 보내는 것은
+    슬라이스 7이다. 채점(S1·S2)은 슬라이스 8이다.
     """
     data = json.loads(GOLDENSET.read_text(encoding="utf-8"))
     items = data["items"][: limit or None]
@@ -302,6 +385,8 @@ def run_goldenset(out: Path | None = None, limit: int | None = None) -> int:
 
     errors: list[str] = []
     no_cite: list[str] = []
+    regenerated: list[str] = []
+    remaining: list[str] = []
     rows = []
     for i, item in enumerate(items, 1):
         head = f"[{i:2}/{len(items)}] {item['id']:6}"
@@ -320,11 +405,20 @@ def run_goldenset(out: Path | None = None, limit: int | None = None) -> int:
         if run.invented_citations:
             errors.append(f"{item['id']}: 없는 청크 ID 인용 {run.invented_citations}")
 
+        if run.regenerated:
+            regenerated.append(item["id"])
+        if not run.verify_ok:
+            remaining.append(item["id"])
+
         mark = "ok      " if (cited or not expects_evidence) else "인용없음"
+        verdict = "검증ok" if run.verify_ok else f"위반{len(run.violations)}"
         print(
             f"{head} {mark} 도구={','.join(run.tools) or '-':38} "
-            f"근거={len(run.evidence_ids):3} 인용={len(cited)} {run.seconds:4.1f}s"
+            f"근거={len(run.evidence_ids):3} 인용={len(cited)} "
+            f"{verdict:6}{'/재생성' if run.regenerated else '      '} {run.seconds:4.1f}s"
         )
+        for v in run.violations:
+            print(f"{'':14}   ! {v['kind']}「{v['token']}」")
         rows.append(
             {
                 "id": item["id"],
@@ -336,6 +430,13 @@ def run_goldenset(out: Path | None = None, limit: int | None = None) -> int:
                 "answer": run.answer,
                 "citations": cited,
                 "inventedCitations": run.invented_citations,
+                # 슬라이스 6 — 검증 결과 (b)(d)
+                "attempts": run.attempts,
+                "regenerated": run.regenerated,
+                "answerHistory": run.answers,
+                "verifyOk": run.verify_ok,
+                "verifyChecked": run.verify_checked,
+                "violations": run.violations,
                 "seconds": round(run.seconds, 2),
             }
         )
@@ -357,8 +458,13 @@ def run_goldenset(out: Path | None = None, limit: int | None = None) -> int:
         print("  에러:", line)
     if no_cite:
         print("  인용 없음:", ", ".join(no_cite))
+    print(f"검증: 재생성 {len(regenerated)}건 {regenerated or ''} · 재생성 뒤에도 위반 "
+          f"{len(remaining)}건 {remaining or ''}")
+    if remaining:
+        print("  → 남은 위반이 실제 위반인지 오탐인지 가른다 (완료 기준 c, docs/VERIFY-NOTES.md)")
+        print("     넘기기로 보내는 것은 슬라이스 7이다 — 여기서 실패로 치지 않는다")
     ok = not errors and not no_cite
-    print("완료 기준 (b)(c):", "통과" if ok else "실패")
+    print("완료 기준:", "통과" if ok else "실패")
     return 0 if ok else 1
 
 
