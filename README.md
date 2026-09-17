@@ -14,7 +14,8 @@
 1단계 완료(슬라이스 1~5), 2단계 「검증·측정·개선」 진행 중. 법제처 API 수집 · 공전 수집 ·
 조회 도구 4종 · 평가셋 18문항 · `판정 → 근거 조립 → 답변 → 검증 → (넘기기)` 파이프라인까지
 돌아간다. 넘기기는 두 갈래로 갈린다 — 소관 밖(`out_of_scope`)은 판정 노드가, 소관이지만 근거에
-답이 없는 것(`no_evidence`)은 답변 노드가 정한다. **채점기는 아직 없다** (슬라이스 8).
+답이 없는 것(`no_evidence`)은 답변 노드가 정한다. 채점기(S1~S4)와 모범 답안 18문항이 있고
+모범 답안 역검증(S5)을 통과한다. **기준 측정과 개선 3회는 아직이다** (슬라이스 9·10).
 
 ## 실행
 
@@ -29,9 +30,17 @@ uv run python verify.py --replay data/runs/slice7.json   # 기록된 답변에 �
 
 uv run python -m agent "유자즙 28% 음료를 유자주스로 팔아도 되나요?"   # 답변 + 호출 도구 + 인용 근거 + 검증
 uv run python -m agent --goldenset --out data/runs/slice7.json       # 평가셋 전 문항 관통
+
+uv run python evaluate.py --selftest                  # 채점 규칙 층 자체 확인 (API 키 불필요)
+uv run python evaluate.py --reference                 # 모범 답안 채점 = S5 역검증
+uv run python evaluate.py --negative                  # 망친 답변이 0점인지 역대조
+uv run python evaluate.py --score data/runs/slice7.json   # 기록된 실행을 채점
+uv run python evaluate.py --out data/runs/baseline.json   # 파이프라인을 돌려 채점
 ```
 
 에이전트 실행에는 `OPENAI_API_KEY` 가 필요하다. 모델은 `OPENAI_MODEL` 로 바꾼다 (기본 `gpt-4o-mini`).
+채점기 모델은 `EVAL_JUDGE_MODEL` 로 따로 둔다 (기본 `gpt-4o-mini`) — 파이프라인 모델은 개선 축이라
+같이 움직이면 회차 비교가 무의미해진다.
 
 수집 스크립트 둘은 받은 원문을 사실 단위 청크로 자른다. 산출물은 `data/corpus/` 에 있고
 **커밋되어 있으므로 다시 받지 않아도 된다** — 다시 받으면 스냅샷이 오늘 날짜로 갱신되고
@@ -86,9 +95,11 @@ corpus.py                 청크 로더 — 본문과 별표를 한 목록으로
 tools.py                  카테고리별 근거 조회 도구 4종 + 자체 점검
 validate_goldenset.py     평가셋 검증기 (스키마·분포·중복·goldCheck·금지 표현)
 verify.py                 환각 검증 규칙 — 수치·조문·유형명을 근거와 대조 + 자체 확인
+evaluate.py               채점기 — S1(집합)·S2(필수 사실 LLM + 금지 표현 규칙)·S3(verify 재사용)·S4(넘기기)
 agent.py                  LangGraph 파이프라인 — 판정 → 근거 조립 → 답변 → 검증 (+재생성 1회) → 넘기기 + CLI
 data/goldenset.json       채점용 평가셋 18문항 (기대 도구·필수 사실·금지 표현·gold·goldCheck)
 data/prompt-examples.json 프롬프트 예시용 4문항 — **채점에 넣지 않는다**
+data/reference-answers.json 모범 답안 18문항 — 채점기 역검증(S5)용. gold 청크만 인용한다
 data/corpus/<CODE>.json   자료별 청크
 data/corpus/tables-*.json 고시 별표 (표시사항별 세부표시기준, 첨가물 표시 별표 등)
 data/corpus/collection-report.json      법제처 수집 리포트
@@ -96,6 +107,7 @@ data/corpus/collection-report-fsd.json  공전 수집 리포트 (항목별 청�
 data/runs/slice5.json     슬라이스 5 관통 기록 (문항별 도구·근거 ID·답변) — 기준 측정의 출발점
 data/runs/slice6.json     슬라이스 6 관통 기록 (+ 위반 목록·재생성 여부·답변 이력)
 data/runs/slice7.json     슬라이스 7 관통 기록 (+ 넘기기 갈래와 기대 라벨)
+data/runs/slice8-reference.json  모범 답안 채점 기록 (S5) — 문항별 S1~S4 와 왜 0점인지
 docs/VERIFY-NOTES.md      검증 규칙이 무엇을 잡고 무엇을 못 잡나 (실측과 한계)
 .cache/fsd/               받은 공전 PDF (gitignore — 4.8MB 짜리가 있다)
 ```
