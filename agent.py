@@ -27,6 +27,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -398,6 +399,63 @@ def build_graph():
     return builder.compile()
 
 
+# ────────────────────────────────────────────── 실행 설정 — 개선 축 넷 (PLAN D13)
+
+
+def _digest(*parts: str) -> str:
+    return hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()[:8]
+
+
+def _topic_index_source() -> str:
+    """주제 색인 축의 내용 — 도구 범위·주제 이름·잡는 말·연결 섹션·기본 근거."""
+    lines = []
+    for name, tool in sorted(tools.TOOLS.items()):
+        lines.append(f"{name}|{tool.scope}|{tool.anchors}")
+        for topic in tool.topics:
+            lines.append(f"  {topic.name}|{topic.terms}|{topic.sections}")
+    return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class RunConfig:
+    """개선 축 넷의 버전. 모든 실행 기록에 박아 회차를 구분한다 (PLAN 슬라이스 9·10).
+
+    버전은 **사람이 적는 문자열이 아니라 내용 해시**다. 손으로 올리는 번호는 올리는 것을
+    잊으면 두 축을 바꾼 실행이 한 축으로 기록되고, 그러면 슬라이스 10의 가드가 조용히
+    통과시킨다 — 「한 번에 하나만」이 사람의 약속으로 되돌아간다.
+
+    `model` 만 해시가 아니라 이름 그대로다. 읽는 사람이 어느 모델이었는지 알아야 하고,
+    이름이 곧 유일한 식별자라 해시로 가릴 값이 없다.
+    """
+
+    router_prompt: str
+    answer_prompt: str
+    topic_index: str
+    model: str
+
+    AXES = ("router_prompt", "answer_prompt", "topic_index", "model")
+
+    @classmethod
+    def current(cls) -> RunConfig:
+        return cls(
+            router_prompt=_digest(ROUTER_PROMPT),
+            # 답변 축은 few-shot 예시까지 포함한다 — 예시를 갈아끼우는 것도 프롬프트 변경이다
+            answer_prompt=_digest(
+                ANSWER_SYSTEM, ANSWER_USER, PROMPT_EXAMPLES.read_text(encoding="utf-8")
+            ),
+            topic_index=_digest(_topic_index_source()),
+            model=MODEL,
+        )
+
+    def as_json(self) -> dict:
+        return {axis: getattr(self, axis) for axis in self.AXES}
+
+    @staticmethod
+    def differing(a: dict, b: dict) -> list[str]:
+        """두 기록의 설정에서 값이 다른 축. 슬라이스 10의 가드가 이걸 센다."""
+        return [axis for axis in RunConfig.AXES if a.get(axis) != b.get(axis)]
+
+
 @dataclass
 class Run:
     question: str
@@ -601,7 +659,12 @@ def run_goldenset(out: Path | None = None, limit: int | None = None) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(
             json.dumps(
-                {"model": MODEL, "at": time.strftime("%Y-%m-%d %H:%M"), "runs": rows},
+                {
+                    "model": MODEL,
+                    "config": RunConfig.current().as_json(),  # 슬라이스 9 — 개선 축 넷
+                    "at": time.strftime("%Y-%m-%d %H:%M"),
+                    "runs": rows,
+                },
                 ensure_ascii=False,
                 indent=2,
             ),

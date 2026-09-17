@@ -28,6 +28,7 @@ import math
 import re
 import sys
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from corpus import Chunk, Corpus, load
 
@@ -680,6 +681,16 @@ def _assemble(
             result.dropped += 1
     result.text = _render(result)
     return result
+
+
+@lru_cache(maxsize=None)
+def scope_ids(name: str) -> set[str]:
+    """도구가 **애초에 볼 수 있는** 청크 전체. 발췌된 것이 아니라 범위 그 자체다.
+
+    슬라이스 9의 원인 분류가 쓴다 — gold 청크가 여기 없으면 `도구 범위 밖`이고,
+    여기 있는데 발췌에 안 들어왔으면 `발췌 누락`이다. 둘은 고칠 곳이 다르다.
+    """
+    return {c.id for c in _resolve(load(), TOOLS[name].scope)}
 
 
 # ────────────────────────────────────────────────────────────── 도구 4종

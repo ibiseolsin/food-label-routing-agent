@@ -58,13 +58,27 @@ REFERENCE = HERE / "data" / "reference-answers.json"
 # 축을 바꿀 때마다 채점 잣대까지 같이 바뀌면 회차 비교가 무의미해진다.
 JUDGE_MODEL = os.getenv("EVAL_JUDGE_MODEL", "gpt-4o-mini")
 
+# 채점기는 온도 0 에서도 같은 입력에 다른 답을 낸다 (실측: 한 문항이 6회 중 3회 갈렸다).
+# 한 번 물어 한 번 믿으면 그 흔들림이 그대로 S2 에 실리고, 슬라이스 10의 개선 3회가
+# 잡음과 구분되지 않는다. 사실마다 홀수 번 물어 다수결로 정한다.
+JUDGE_VOTES = int(os.getenv("EVAL_JUDGE_VOTES", "3"))
+
 
 # ─────────────────────────────────────────────── S2 필수 사실 — LLM 층 (D12)
 
 
 class FactVerdict(BaseModel):
+    """**`quote` 가 먼저다.** 먼저 답변에서 그 사실을 말한 자리를 짚게 하고, 그 다음에 판정한다.
+
+    순서를 뒤집으면 「주제가 비슷하니 담았겠지」로 먼저 판정하고 인용을 나중에 지어낸다
+    (`agent.Answer` 가 `text` 를 `verdict` 앞에 둔 것과 같은 이유).
+    """
+
     index: int = Field(description="필수 사실의 번호 (1부터)")
-    present: bool = Field(description="답변이 그 사실을 담고 있으면 true")
+    quote: str = Field(
+        description="답변에서 그 사실을 말한 부분을 이어진 한 구간 그대로 복사. 없으면 빈 문자열"
+    )
+    present: bool = Field(description="옮긴 부분이 그 사실을 사실로 담고 있으면 true")
     why: str = Field(description="판단 근거 한 문장. 담지 않았다면 무엇이 빠졌는지")
 
 
@@ -75,11 +89,19 @@ class FactJudgment(BaseModel):
 JUDGE_SYSTEM = """너는 식품 법령 안내 답변을 채점한다. 판단할 것은 **하나뿐**이다 —
 아래 필수 사실 각각을 답변이 **사실로** 담고 있는가.
 
+각 사실마다 먼저 **답변에서 그 사실을 말한 부분을 그대로 옮긴다**(`quote`).
+답변에 그런 부분이 없으면 `quote` 를 빈 문자열로 두고 `present` 를 false 로 한다.
+
+**옮긴 말은 기계가 답변과 글자 그대로 대조한다.** 한 글자라도 다르거나, 가운데를 줄여
+쓰거나, 떨어져 있는 두 부분을 이어 붙이면 **대조에 걸려 담지 않은 것으로 처리된다.**
+답변에서 이어진 한 구간을 그대로 복사해라. 요약하지 않는다.
+
 지켜야 할 것:
 1. **표현이 아니라 사실로 본다.** 문장이 달라도, 순서가 달라도, 말을 풀어 썼어도
    같은 사실을 말하면 담은 것이다. 인용 표기(`[FDC-016]`)의 유무는 보지 않는다.
 2. 사실에 **수치·명칭이 들어 있으면 그 값이 같아야** 한다. 값이 다르면 담지 않은 것이다.
-3. 답변이 그 사실을 **명시적으로 말해야** 한다. 답변에서 추론할 수 있을 뿐이면 담지 않은 것이다.
+3. 답변이 그 사실을 **명시적으로 말해야** 한다. 주제가 비슷하다거나 답변에서 추론할 수
+   있을 뿐이면 담지 않은 것이다. 옮길 부분이 없으면 담지 않은 것이다.
 4. 답변이 더 많은 말을 한 것은 감점 사유가 아니다. 필수 사실이 들어 있는지만 본다.
 5. 사실이 「…를 명시한다」·「…를 함께 보여준다」처럼 **말하기를 요구하는 형태**면,
    답변이 실제로 그 말을 했는지 본다.
@@ -103,32 +125,65 @@ def _judge_llm():
     )
 
 
+def quote_grounded(quote: str, answer: str) -> bool:
+    """채점기가 짚은 자리가 답변에 **실제로 있는가**. 규칙 층이다 — LLM 을 태우지 않는다.
+
+    D12 가 S2 를 두 층으로 나눈 것과 같은 이유로, LLM 판정 위에 규칙 한 겹을 더 얹는다.
+    실측에서 채점기는 답변에 없는 사실을 「담았다」고 하면서 **인용은 필수 사실 문장을 그대로
+    베껴 왔다**. 인용이 답변에 있는지 대조하면 그 자리가 기계로 드러난다.
+    `tools.norm` 으로 정규화하므로 부호·띄어쓰기 차이는 봐준다.
+    """
+    return bool(norm(quote)) and norm(quote) in norm(answer)
+
+
 def judge_facts(question: str, answer: str, facts: list[dict], llm=None) -> list[dict]:
-    """필수 사실이 답변에 들어 있는지 LLM 이 판단한다. 한 문항에 호출 1회."""
+    """필수 사실이 답변에 들어 있는지 LLM 이 판단하고, 짚은 자리를 규칙이 대조한다.
+
+    **인용이 답변에 없으면 판정이 무엇이든 「담지 않았다」로 친다** — 근거를 못 짚는 판정은
+    답변이 아니라 채점기의 기억에서 나온 것이다. 그 위에 다수결을 얹는다 (`JUDGE_VOTES`).
+    호출은 한 문항에 `JUDGE_VOTES` 회다.
+    """
     if not facts:
         return []
     listed = "\n".join(f"{i}. {f['fact']}" for i, f in enumerate(facts, 1))
     llm = llm or _judge_llm()
-    result: FactJudgment = llm.invoke(
-        [
-            ("system", JUDGE_SYSTEM),
-            (
-                "human",
-                JUDGE_USER.format(
-                    question=question, facts=listed, answer=answer, n=len(facts)
-                ),
-            ),
-        ]
-    )
-    by_index = {v.index: v for v in result.facts}
+    messages = [
+        ("system", JUDGE_SYSTEM),
+        (
+            "human",
+            JUDGE_USER.format(question=question, facts=listed, answer=answer, n=len(facts)),
+        ),
+    ]
+
+    # 사실마다 표를 모은다. 규칙 층(짚은 자리 대조)은 **표마다** 건다 —
+    # 자리를 못 짚은 표는 「담았다」로 세지 않는다.
+    votes: dict[int, list[FactVerdict]] = {i: [] for i in range(1, len(facts) + 1)}
+    for _ in range(max(1, JUDGE_VOTES)):
+        result: FactJudgment = llm.invoke(messages)
+        for v in result.facts:
+            if v.index in votes:
+                votes[v.index].append(v)
+
     out = []
     for i, f in enumerate(facts, 1):
-        v = by_index.get(i)
+        cast = votes[i]
+        yes = [v for v in cast if v.present and quote_grounded(v.quote, answer)]
+        present = len(yes) * 2 > len(cast)
+        # 남기는 인용은 **이긴 쪽**의 것이다. 진 쪽 인용을 남기면 기록에서 판정과 어긋나 보인다
+        v = (yes[0] if present else next((x for x in cast if x not in yes), None)) or (
+            cast[0] if cast else None
+        )
+        quote = v.quote if v else ""
+        why = v.why if v else "채점기가 이 사실을 판단하지 않았다"
+        if v and v.present and not quote_grounded(quote, answer):
+            why = f"채점기가 짚은 자리가 답변에 없다 — 「{quote[:40]}」"
         out.append(
             {
                 "fact": f["fact"],
-                "present": bool(v and v.present),
-                "why": v.why if v else "채점기가 이 사실을 판단하지 않았다",
+                "present": present,
+                "quote": quote,
+                "votes": f"{len(yes)}/{len(cast)}",
+                "why": why,
             }
         )
     return out
@@ -177,7 +232,10 @@ class Score:
     s2: bool = False
     s3: bool = False
     s4: bool = False
-    reasons: list[str] = field(default_factory=list)  # 왜 0점인지 (완료 기준 d)
+    reasons: list[str] = field(default_factory=list)  # 왜 0점인지 (슬라이스 8 완료 기준 d)
+    causes: list[str] = field(default_factory=list)  # 원인 분류 (슬라이스 9 완료 기준 c)
+    answer: str = ""  # 기록만 보고 원인을 다시 볼 수 있게 (슬라이스 10이 회차를 비교한다)
+    evidence_ids: list[str] = field(default_factory=list)
     expected_tools: list[str] = field(default_factory=list)
     tools: list[str] = field(default_factory=list)
     facts: list[dict] = field(default_factory=list)
@@ -201,6 +259,7 @@ class Score:
             "S3": int(self.s3),
             "S4": int(self.s4),
             "why": self.reasons,
+            "causes": self.causes,
             "expectedTools": self.expected_tools,
             "tools": self.tools,
             "facts": self.facts,
@@ -211,6 +270,8 @@ class Score:
             "escalation": self.escalation,
             "citations": self.citations,
             "citationsOutsideGold": self.bad_citations,
+            "answer": self.answer,
+            "evidenceIds": self.evidence_ids,
         }
 
 
@@ -222,6 +283,8 @@ def score_row(item: dict, row: Row, llm=None) -> Score:
         expected_escalation=item.get("expectedEscalation"),
         escalation=row.escalation,
         citations=list(row.citations),
+        answer=row.answer,
+        evidence_ids=list(row.evidence_ids),
     )
 
     # S1 — 집합 비교 (PLAN D2). 순서와 중복은 보지 않는다.
@@ -261,7 +324,71 @@ def score_row(item: dict, row: Row, llm=None) -> Score:
     # 모범 답안 전용 확인 (완료 기준 b) — 채점에는 넣지 않고 따로 보고한다
     gold = set(item.get("gold", []))
     s.bad_citations = [c for c in row.citations if c not in gold]
+
+    s.causes = classify_cause(item, row, s)  # 슬라이스 9 — 1점이 아닌 문항에만 붙는다
     return s
+
+
+# ─────────────────────────────────────────── 오답 원인 분류 (슬라이스 9)
+#
+# 여섯으로 고정한다 (PLAN 슬라이스 9). 분류가 늘면 개선 후보도 같이 흩어져서,
+# 개선 3회를 어디에 태울지 고르는 일이 다시 감이 된다.
+#
+# | 분류 | 무엇이 틀렸나 | 고칠 곳 |
+# |---|---|---|
+# | `라우팅 과선택` | 기대 밖 도구를 더 골랐다 | `router_prompt` |
+# | `라우팅 누락` | 기대 도구를 안 골랐다 | `router_prompt` |
+# | `도구 범위 밖` | gold 청크가 그 도구의 **범위 자체**에 없다 | 도구 `scope` (축 밖 — 설계 변경) |
+# | `발췌 누락` | 범위에는 있는데 발췌에 안 들어왔다 | `topic_index` |
+# | `답변 누락` | 근거는 다 들어왔는데 답변이 못 담았다 | `answer_prompt` |
+# | `넘기기 오판` | 넘기기 갈래가 기대와 다르다 | `router_prompt` · `answer_prompt` |
+#
+# **`도구 범위 밖`과 `발췌 누락`을 가르는 것이 이 분류의 값이다.** 둘 다 증상은 「gold 청크가
+# 근거에 없다」로 같지만 고칠 곳이 다르다 — 앞은 도구 설계, 뒤는 주제 색인이다.
+# `tools.scope_ids` 가 도구의 범위 전체를 돌려줘서 이걸 기계로 가른다.
+
+CAUSES = (
+    "라우팅 과선택",
+    "라우팅 누락",
+    "도구 범위 밖",
+    "발췌 누락",
+    "답변 누락",
+    "넘기기 오판",
+)
+
+
+def classify_cause(item: dict, row: Row, s: Score) -> list[str]:
+    """1점이 아닌 문항에 원인을 붙인다 (완료 기준 c). 위(라우팅)부터 아래(답변) 순서로."""
+    if s.total == 4:
+        return []
+
+    causes: list[str] = []
+    expected = set(item["expectedTools"])
+    called = set(row.tools)
+    if called - expected:
+        causes.append("라우팅 과선택")
+    if expected - called:
+        causes.append("라우팅 누락")
+    if not s.s4:
+        causes.append("넘기기 오판")
+
+    # 근거 쪽은 S2·S3 가 깨졌을 때만 본다. S1·S4 만 틀린 문항에 근거 원인을 붙이면
+    # 개선 후보가 부풀어 우선순위가 흐려진다.
+    if not (s.s2 and s.s3):
+        gold = set(item.get("gold", []))
+        missing = gold - set(row.evidence_ids)
+        pool: set[str] = set()
+        for name in expected:
+            pool |= tools.scope_ids(name)
+        outside = {g for g in missing if g not in pool}
+        if outside:
+            causes.append("도구 범위 밖")
+        # 라우팅이 이미 도구를 빠뜨렸으면 발췌가 비는 건 그 결과다 — 따로 세지 않는다
+        if (missing - outside) and "라우팅 누락" not in causes:
+            causes.append("발췌 누락")
+        if not missing:
+            causes.append("답변 누락")
+    return causes
 
 
 # ─────────────────────────────────────────── 채점 대상 만들기 — 세 갈래
@@ -377,7 +504,7 @@ def pipeline_rows(items: list[dict]) -> list[Row]:
 # ─────────────────────────────────────────────────────────────── 출력
 
 
-def report(scores: list[Score], mode: str, out: Path | None) -> dict:
+def report(scores: list[Score], mode: str, out: Path | None, config: dict | None = None) -> dict:
     n = len(scores)
     s1 = sum(s.s1 for s in scores) / n
     s2 = sum(s.s2 for s in scores) / n
@@ -389,6 +516,8 @@ def report(scores: list[Score], mode: str, out: Path | None) -> dict:
     for s in scores:
         marks = "".join("o" if x else "X" for x in (s.s1, s.s2, s.s3, s.s4))
         print(f"  {s.id:6} S1234={marks}  대조 {s.checked:2}건" + ("" if s.total == 4 else "  ←"))
+        if s.causes:
+            print(f"         원인: {' · '.join(s.causes)}")
         for line in s.reasons:
             print(f"         {line}")
         if s.bad_citations:
@@ -399,10 +528,24 @@ def report(scores: list[Score], mode: str, out: Path | None) -> dict:
     print(f"S3 근거 밖 진술     {s3_bad}건  (문항 {sum(not s.s3 for s in scores)}개)")
     print(f"S4 넘기기           위반 {s4_bad}건")
 
+    # 원인 분류 집계 — 개선 후보의 우선순위가 여기서 나온다 (완료 기준 c·d)
+    tally = {c: [s.id for s in scores if c in s.causes] for c in CAUSES}
+    tally = {c: ids for c, ids in tally.items() if ids}
+    if tally:
+        print()
+        print("오답 원인:")
+        for cause, ids in sorted(tally.items(), key=lambda kv: -len(kv[1])):
+            print(f"  {cause:12} {len(ids)}건  {', '.join(ids)}")
+    if config:
+        print()
+        print("실행 설정: " + " · ".join(f"{k}={v}" for k, v in config.items()))
+
     summary = {
         "mode": mode,
         "at": time.strftime("%Y-%m-%d %H:%M"),
         "judgeModel": JUDGE_MODEL,
+        "config": config,  # 개선 축 넷 (PLAN D13) — 슬라이스 10의 가드가 읽는다
+        "causes": tally,
         "items": n,
         "S1": round(s1, 4),
         "S2": round(s2, 4),
@@ -474,6 +617,26 @@ def selftest() -> int:
             print(f"        → {'못 잡았다' if want else '엉뚱한 것을 잡았다'}")
         failed += bad
 
+    # 슬라이스 9 — 채점기가 짚은 자리를 규칙이 대조한다.
+    # 실측에서 채점기는 필수 사실 문장을 그대로 베껴 인용으로 내놓으면서 「담았다」고 했다.
+    # 그 자리가 답변에 있는지 대조하는 것이 이 층의 전부다.
+    print()
+    print("S2 필수 사실 — 짚은 자리 대조 (슬라이스 9)")
+    _ANSWER = '아스코르브산나트륨은 라벨에 "아스코브산나트륨", "비타민C-Na"로 줄여 적을 수 있다.'
+    quote_cases: tuple[tuple[str, str, str, bool], ...] = (
+        ("답변에서 그대로 옮겼다", '라벨에 "아스코브산나트륨"', _ANSWER, True),
+        ("부호·띄어쓰기만 다르다", "라벨에 아스코브산나트륨", _ANSWER, True),
+        ("한 글자가 다르다", "아스코브산나트륨은 라벨에", _ANSWER, False),
+        ("가운데를 줄여 이어 붙였다", "아스코르브산나트륨은 줄여 적을 수 있다", _ANSWER, False),
+        ("필수 사실 문장을 베껴 왔다", "L-아스코브산나트륨의 간략명은 비타민C-Na 다", _ANSWER, False),
+        ("아무것도 못 짚었다", "", _ANSWER, False),
+    )
+    for name, quote, answer, want in quote_cases:
+        got = quote_grounded(quote, answer)
+        bad = got != want
+        print(f"  {'실패' if bad else 'ok  '} [{'붙어야' if want else '걸려야'}] {name}")
+        failed += bad
+
     print("\nS1 — 집합 비교 (PLAN D2)")
     for name, called, expected, want in _SELFTEST_SET:
         got = set(called) == set(expected)
@@ -495,6 +658,71 @@ def selftest() -> int:
         s = score_row(item, row, llm=None)
         bad = s.s4 != want
         print(f"  {'실패' if bad else 'ok  '} [{'1점' if want else '0점'}] {name}")
+        failed += bad
+
+    # 슬라이스 9 — 원인 분류. 여섯이 실제로 갈리는지 본다.
+    # `도구 범위 밖`과 `발췌 누락`이 같은 증상에서 갈리는 것이 핵심이다.
+    print()
+    print("원인 분류 — 여섯 갈래 (슬라이스 9)")
+    FACT = [{"fact": "과·채주스는 과·채즙 95% 이상이다", "source": "FDC-016", "where": ""}]
+    cause_cases: tuple[tuple[str, dict, Row, list[str]], ...] = (
+        (
+            "기대 밖 도구를 더 골랐다",
+            {"expectedTools": ["lookup_food_type"], "gold": ["FDC-016"]},
+            Row("X", "q", ["lookup_food_type", "lookup_labeling"], "과·채즙 95% 이상이다 [FDC-016]",
+                None, "[FDC-016] 과·채즙 95% 이상", ["FDC-016"], ["FDC-016"]),
+            ["라우팅 과선택"],
+        ),
+        (
+            "기대 도구를 안 골랐다",
+            {"expectedTools": ["lookup_food_type"], "gold": ["FDC-016"], "requiredFacts": FACT},
+            Row("X", "q", [], "모르겠습니다.", None, "", [], []),
+            ["라우팅 누락"],
+        ),
+        (
+            "gold 가 도구 범위 자체에 없다",
+            {"expectedTools": ["lookup_food_type"], "gold": ["LBL-001"], "requiredFacts": FACT},
+            Row("X", "q", ["lookup_food_type"], "모르겠습니다.", None, "", ["FDC-016"], []),
+            ["도구 범위 밖"],
+        ),
+        (
+            "범위에는 있는데 발췌에 안 들어왔다",
+            {"expectedTools": ["lookup_food_type"], "gold": ["FDC-016"], "requiredFacts": FACT},
+            Row("X", "q", ["lookup_food_type"], "모르겠습니다.", None, "", ["FDC-001"], []),
+            ["발췌 누락"],
+        ),
+        (
+            "근거는 다 들어왔는데 답변이 못 담았다",
+            {"expectedTools": ["lookup_food_type"], "gold": ["FDC-016"], "requiredFacts": FACT},
+            Row("X", "q", ["lookup_food_type"], "잘 모르겠습니다.", None,
+                "[FDC-016] 과·채즙 95% 이상", ["FDC-016"], []),
+            ["답변 누락"],
+        ),
+        (
+            "넘겨야 하는데 답했다",
+            {"expectedTools": ["lookup_food_type"], "gold": ["FDC-016"],
+             "expectedEscalation": "no_evidence"},
+            Row("X", "q", ["lookup_food_type"], "쓸 수 있습니다 [FDC-016]", None,
+                "[FDC-016] 과·채즙 95% 이상", ["FDC-016"], ["FDC-016"]),
+            ["넘기기 오판"],
+        ),
+        (
+            "1점짜리 문항에는 원인을 붙이지 않는다",
+            {"expectedTools": ["lookup_food_type"], "gold": ["FDC-016"]},
+            Row("X", "q", ["lookup_food_type"], "과·채즙 95% 이상이다 [FDC-016]", None,
+                "[FDC-016] 과·채즙 95% 이상", ["FDC-016"], ["FDC-016"]),
+            [],
+        ),
+    )
+    # 필수 사실 채점은 LLM 이라 여기서는 태우지 않는다 — `llm=None` 이면 「없는 것으로」 친다.
+    for name, patch, row, want in cause_cases:
+        item = {"id": "X", "expectedEscalation": None, "requiredFacts": [],
+                "forbiddenPhrases": [], **patch}
+        s = score_row(item, row, llm=None)
+        bad = s.causes != want
+        print(f"  {'실패' if bad else 'ok  '} {name:32} → {' · '.join(s.causes) or '(없음)'}")
+        if bad:
+            print(f"        → 기대 {want}")
         failed += bad
 
     print(f"\n자체 확인 실패 {failed}")
@@ -619,16 +847,22 @@ def main(argv: list[str]) -> int:
         return negative()
 
     items = load_items(args.limit)
+    config: dict | None = None
     if args.reference:
+        # 모범 답안은 파이프라인을 안 돌린다 — 붙일 설정이 없다 (있는 척하면 회차로 오인된다)
         mode, rows = "reference", reference_rows(items)
     elif args.score:
         mode, rows = f"record:{args.score.name}", record_rows(items, args.score)
+        config = json.loads(args.score.read_text(encoding="utf-8")).get("config")
     else:
+        import agent
+
         mode, rows = "pipeline", pipeline_rows(items)
+        config = agent.RunConfig.current().as_json()
 
     llm = _judge_llm()
     scores = [score_row(item, row, llm) for item, row in zip(items, rows, strict=True)]
-    report(scores, mode, args.out)
+    report(scores, mode, args.out, config)
 
     if mode != "reference":
         return 0
