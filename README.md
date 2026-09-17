@@ -10,19 +10,21 @@
 
 ## 현재 상태
 
-1단계 「근거 문서와 평가셋」 진행 중. 슬라이스 1(법제처 API 수집) 완료.
+1단계 「근거 문서와 평가셋」 진행 중. 슬라이스 1(법제처 API 수집)·2(공전 수집) 완료.
 
 ## 실행
 
 ```bash
-uv run python collect_law.py
+uv run python collect_law.py    # 법제처 OPEN API — 표시·광고 법률·시행령·고시 4종
+uv run python collect_code.py   # 식품안전나라 공전 서비스 — 식품공전·식품첨가물공전
 ```
 
-법제처 국가법령정보센터 OPEN API 로 법률·시행령·고시 4종을 받아 사실 단위 청크로 자른다.
-산출물은 `data/corpus/` 에 있고 **커밋되어 있으므로 다시 받지 않아도 된다** — 다시 받으면
-스냅샷이 오늘 날짜로 갱신되고 청크 ID 가 밀린다.
+둘 다 받은 원문을 사실 단위 청크로 자른다. 산출물은 `data/corpus/` 에 있고
+**커밋되어 있으므로 다시 받지 않아도 된다** — 다시 받으면 스냅샷이 오늘 날짜로 갱신되고
+청크 ID 가 밀린다. 두 스크립트 모두 끝에서 완료 기준을 스스로 확인하고, 실패하면 종료 코드 1 이다.
 
 `.env` 는 `.env.example` 을 복사해 만든다. `LAW_OC` 가 없으면 `test` 로 돌아간다(수집은 된다).
+공전 수집에는 키가 필요 없다.
 
 ## 근거 문서 (스냅샷 2026-09-17)
 
@@ -32,25 +34,36 @@ uv run python collect_law.py
 | FLD | 같은 법 시행령 (제1~6조) | 2025-09-19 | 20 | - |
 | LBL | 식품등의 표시기준 (고시) | 2025-08-29 | 114 | 14개 87KB |
 | UNF | 식품등의 부당한 표시 또는 광고의 내용 기준 (고시) | 2025-12-04 | 17 | 2개 5KB |
+| FDC | 식품의 기준 및 규격 — 제5. 9. 음료류 + 제2. 식품일반 공통기준 | 2026-05-19 | 143 | - |
+| FAC | 식품첨가물의 기준 및 규격 — 일반사용기준 + 품목별 사용기준 | 2025-11-26 | 883 | - |
 
-식품공전·식품첨가물공전은 이 API 로 받을 수 없어 슬라이스 2에서 따로 받는다.
+합계 1,241 청크. 공전 두 종은 법제처로 본문을 받을 수 없어(본문 329자, 실질 내용이 첨부파일)
+식품안전나라 「식품분야 공전 온라인 서비스」의 항목별 PDF 로 받는다. 첨가물은
+**품목 하나 = 청크 하나**(716종)라 품목명으로 사용기준이 바로 잡힌다.
+
+공전 본문에는 아직 시행되지 않은 개정이 주석으로 덧붙어 있다. 표 칸에 든 것은 잘라내고,
+줄글에 겹친 것은 잘라낼 자리가 없어 기록만 했다 — 어느 청크가 그런지는
+[docs/COLLECT-NOTES.md](docs/COLLECT-NOTES.md) 와 `collection-report-fsd.json` 에 있다.
 
 ## 구조
 
 ```
 collect_law.py            법제처 API 수집 드라이버
-chunking.py               조/항/호·계층 표기 파싱 규칙 (슬라이스 2도 같이 쓴다)
+collect_code.py           식품안전나라 공전 수집 드라이버 (PDF → 청크)
+chunking.py               조/항/호·계층 표기 파싱 규칙 (두 드라이버가 같이 쓴다)
 sources.py                수집 대상 목록과 범위 밖 주제
 data/corpus/<CODE>.json   자료별 청크
 data/corpus/tables-*.json 고시 별표 (표시사항별 세부표시기준, 첨가물 표시 별표 등)
-data/corpus/collection-report.json  문서별 시행일·청크 수·시행 예정 개정 알림
+data/corpus/collection-report.json      법제처 수집 리포트
+data/corpus/collection-report-fsd.json  공전 수집 리포트 (항목별 청크 수·미시행 개정)
+.cache/fsd/               받은 공전 PDF (gitignore — 4.8MB 짜리가 있다)
 ```
 
 ## 제출물 체크리스트
 
 제출 직전에 **실행으로** 확인한다.
 
-- [ ] `uv run python collect_law.py` 가 검증 통과로 끝난다
+- [ ] `uv run python collect_law.py` · `collect_code.py` 가 검증 통과로 끝난다
 - [ ] `uv run python -m agent "<질문>"` 이 답변 + 호출 도구 + 인용 근거를 출력한다
 - [ ] `uv run python evaluate.py` 가 S1·S2 수치를 출력하고 기준(≥0.75)을 넘는다
 - [ ] `uv run streamlit run app.py` 데모에서 답변·근거·검증 결과가 한 화면에 보인다
