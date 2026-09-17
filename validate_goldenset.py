@@ -171,7 +171,10 @@ def check_gold(items: list[dict], fail) -> None:
         if item.get("gold") and not item.get("goldCheck"):
             fail(f"{where}: gold 가 있는데 goldCheck 정규식이 없다")
 
-        body = "\n".join(c.text for c in golds)
+        # **위치도 근거의 일부다.** `tools._render` 가 청크마다 `path` 를 본문과 함께 넘기고,
+        # 별표는 규칙이 표 제목에 있다 — 「별표 6 명칭, 간략명 또는 주용도를 표시하여야 하는
+        # 식품첨가물」. 본문만 대조하면 표 제목에 실린 규칙을 근거로 인정하지 못한다.
+        body = "\n".join(f"{c.path}\n{c.text}" for c in golds)
         for pattern in item.get("goldCheck", []):
             try:
                 rx = re.compile(pattern)
