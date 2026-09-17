@@ -5,21 +5,24 @@
 
 아이펠 AI 에이전트 1기 — 에이전트 팀 꾸리기_Agt1 5번 노드 「고객 응대 에이전트 만들기 [프로젝트]」
 
-- 요구사항: [PRD.md](PRD.md) · 작업계획: [PLAN.md](PLAN.md) · 수집 기록: [docs/COLLECT-NOTES.md](docs/COLLECT-NOTES.md)
+- 요구사항: [PRD.md](PRD.md) · 작업계획: [PLAN.md](PLAN.md)
+- 수집 기록: [docs/COLLECT-NOTES.md](docs/COLLECT-NOTES.md) · 카테고리 매핑표: [docs/CATEGORY-MAP.md](docs/CATEGORY-MAP.md)
 - 배포 주소: (미정 — 슬라이스 10)
 
 ## 현재 상태
 
-1단계 「근거 문서와 평가셋」 진행 중. 슬라이스 1(법제처 API 수집)·2(공전 수집) 완료.
+1단계 「근거 문서와 평가셋」 진행 중. 슬라이스 1(법제처 API 수집)·2(공전 수집)·3(조회 도구 4종) 완료.
 
 ## 실행
 
 ```bash
 uv run python collect_law.py    # 법제처 OPEN API — 표시·광고 법률·시행령·고시 4종
 uv run python collect_code.py   # 식품안전나라 공전 서비스 — 식품공전·식품첨가물공전
+uv run python tools.py          # 조회 도구 4종 자체 점검
+uv run python tools.py lookup_food_type "유자즙 28%"   # 도구 하나를 직접 호출
 ```
 
-둘 다 받은 원문을 사실 단위 청크로 자른다. 산출물은 `data/corpus/` 에 있고
+수집 스크립트 둘은 받은 원문을 사실 단위 청크로 자른다. 산출물은 `data/corpus/` 에 있고
 **커밋되어 있으므로 다시 받지 않아도 된다** — 다시 받으면 스냅샷이 오늘 날짜로 갱신되고
 청크 ID 가 밀린다. 두 스크립트 모두 끝에서 완료 기준을 스스로 확인하고, 실패하면 종료 코드 1 이다.
 
@@ -45,6 +48,22 @@ uv run python collect_code.py   # 식품안전나라 공전 서비스 — 식품
 줄글에 겹친 것은 잘라낼 자리가 없어 기록만 했다 — 어느 청크가 그런지는
 [docs/COLLECT-NOTES.md](docs/COLLECT-NOTES.md) 와 `collection-report-fsd.json` 에 있다.
 
+## 카테고리 = 도구 4종
+
+과제 지표가 「호출한 도구 집합이 기대 집합과 정확히 일치하면 1점」이라 카테고리와 도구를
+1:1 로 붙였다. 어느 도구가 문서의 어느 부분을 보는지는 [docs/CATEGORY-MAP.md](docs/CATEGORY-MAP.md) 가 원본이다.
+
+| 도구 | 답하는 것 | 근거 |
+|---|---|---|
+| `lookup_food_type` | 내 제품이 어느 식품유형인가 | 식품공전 음료류 + 식품원료 기준 + 제조·가공기준 |
+| `lookup_labeling` | 라벨에 뭐가 반드시 들어가나 | 표시기준 본문 + 별표·별지·별도 |
+| `lookup_additive` | 이 첨가물을 얼마까지 쓰고 뭐라 적나 | 첨가물공전 + 표시기준 별표 4~6 |
+| `lookup_ad_claims` | 이 문구가 부당한 표시·광고인가 | 표시광고법·시행령 + 부당표시광고 고시 |
+
+발췌는 **주제 색인 + 키워드 점수 + (첨가물) 별칭 색인**으로 한다. 벡터 검색을 쓰지 않는다 —
+같은 질의가 늘 같은 근거를 돌려줘야 개선 축을 하나씩 바꾼 효과를 잴 수 있다.
+도구 1회 반환은 8,000자 이하다.
+
 ## 구조
 
 ```
@@ -52,6 +71,8 @@ collect_law.py            법제처 API 수집 드라이버
 collect_code.py           식품안전나라 공전 수집 드라이버 (PDF → 청크)
 chunking.py               조/항/호·계층 표기 파싱 규칙 (두 드라이버가 같이 쓴다)
 sources.py                수집 대상 목록과 범위 밖 주제
+corpus.py                 청크 로더 — 본문과 별표를 한 목록으로 (별표는 여기서 청크가 된다)
+tools.py                  카테고리별 근거 조회 도구 4종 + 자체 점검
 data/corpus/<CODE>.json   자료별 청크
 data/corpus/tables-*.json 고시 별표 (표시사항별 세부표시기준, 첨가물 표시 별표 등)
 data/corpus/collection-report.json      법제처 수집 리포트
@@ -64,6 +85,7 @@ data/corpus/collection-report-fsd.json  공전 수집 리포트 (항목별 청�
 제출 직전에 **실행으로** 확인한다.
 
 - [ ] `uv run python collect_law.py` · `collect_code.py` 가 검증 통과로 끝난다
+- [ ] `uv run python tools.py` 가 도구 4종 점검을 통과한다
 - [ ] `uv run python -m agent "<질문>"` 이 답변 + 호출 도구 + 인용 근거를 출력한다
 - [ ] `uv run python evaluate.py` 가 S1·S2 수치를 출력하고 기준(≥0.75)을 넘는다
 - [ ] `uv run streamlit run app.py` 데모에서 답변·근거·검증 결과가 한 화면에 보인다
