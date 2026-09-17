@@ -1,0 +1,8 @@
+[project]
+name = "agentteam-m05-customer-support-agent"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.28.1",
+    "python-dotenv>=1.2.3",
+]

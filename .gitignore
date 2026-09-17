@@ -1,0 +1,7 @@
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+
+# 실행 산출물
+outputs/

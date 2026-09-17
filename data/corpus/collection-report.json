@@ -1,0 +1,102 @@
+{
+  "collectedAt": "2026-09-17",
+  "oc": "test (본인 OC 미설정)",
+  "sources": [
+    {
+      "code": "FLA",
+      "kind": "법률",
+      "name": "식품 등의 표시ㆍ광고에 관한 법률",
+      "category": "ad_claims",
+      "effectiveDate": "2025-09-19",
+      "inForce": true,
+      "chunks": 64,
+      "futureArticles": [],
+      "futureTables": [],
+      "pendingEffective": [
+        "2026-11-27"
+      ]
+    },
+    {
+      "code": "FLD",
+      "kind": "시행령",
+      "name": "식품 등의 표시ㆍ광고에 관한 법률 시행령",
+      "category": "ad_claims",
+      "effectiveDate": "2025-09-19",
+      "inForce": true,
+      "chunks": 20,
+      "futureArticles": [],
+      "futureTables": [],
+      "pendingEffective": null
+    },
+    {
+      "code": "LBL",
+      "kind": "고시",
+      "name": "식품등의 표시기준",
+      "category": "labeling",
+      "effectiveDate": "2025-08-29",
+      "promulgated": "2025-08-29",
+      "inForce": true,
+      "chunks": 114,
+      "tables": 14,
+      "tableChars": 88625,
+      "pickedSeq": "2100000263558",
+      "versionCount": 45,
+      "apiCurrentSeq": "2100000279014",
+      "pendingAmendment": {
+        "seq": "2100000279014",
+        "effective": "2028-01-01"
+      }
+    },
+    {
+      "code": "UNF",
+      "kind": "고시",
+      "name": "식품등의 부당한 표시 또는 광고의 내용 기준",
+      "category": "ad_claims",
+      "effectiveDate": "2025-12-04",
+      "promulgated": "2025-12-04",
+      "inForce": true,
+      "chunks": 17,
+      "tables": 2,
+      "tableChars": 4897,
+      "pickedSeq": "2100000269428",
+      "versionCount": 5,
+      "apiCurrentSeq": "2100000269428",
+      "pendingAmendment": null
+    }
+  ],
+  "totalChunks": 215,
+  "outOfScope": [
+    {
+      "topic": "영업등록·영업신고",
+      "owner": "식품위생법 (관할 시·군·구 위생부서)"
+    },
+    {
+      "topic": "HACCP 인증",
+      "owner": "식품안전관리인증원"
+    },
+    {
+      "topic": "수입식품 통관·수입신고",
+      "owner": "수입식품안전관리 특별법 (지방식약청 수입식품과)"
+    },
+    {
+      "topic": "건강기능식품 기능성 인정",
+      "owner": "건강기능식품에 관한 법률 (식약처 건강기능식품정책과)"
+    },
+    {
+      "topic": "위반 시 처분 수위·과태료",
+      "owner": "관할 행정청 및 법률 전문가"
+    },
+    {
+      "topic": "주류 표시",
+      "owner": "주세법 및 주류 관련 고시"
+    },
+    {
+      "topic": "축산물가공품 개별 표시기준",
+      "owner": "축산물 위생관리법"
+    },
+    {
+      "topic": "표시·광고 사전 심의 신청 절차",
+      "owner": "자율심의기구 (식품산업협회 등)"
+    }
+  ]
+}
