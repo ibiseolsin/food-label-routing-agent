@@ -1,0 +1,37 @@
+{
+  "version": "1",
+  "collectedAt": "2026-09-17",
+  "note": "프롬프트에 예시(few-shot)로 넣는 문항. **채점에 넣지 않는다** — PRD 4절 평가셋 요건의 마지막 줄. goldenset.json 과 질문이 겹치면 validate_goldenset.py 가 실패한다.",
+  "items": [
+    {
+      "id": "EX-1",
+      "category": "food_type",
+      "question": "두유에 과일즙을 넣으면 어떤 식품유형인가요?",
+      "expectedTools": ["lookup_food_type"],
+      "expectedEscalation": null,
+      "answerSketch": "가공두유다. 원액두유나 두류가공품의 추출액에 과일·채소즙 등을 가한 것(두류고형분 1.4% 이상)을 가공두유라 한다.",
+      "citations": ["FDC-028"],
+      "teaches": "유형 정의를 그대로 인용하고, 정의에 붙은 수치(두류고형분 1.4% 이상)를 빼먹지 않는다"
+    },
+    {
+      "id": "EX-2",
+      "category": "ad_claims",
+      "question": "'슈퍼푸드 유자'라고 광고해도 되나요?",
+      "expectedTools": ["lookup_ad_claims"],
+      "expectedEscalation": null,
+      "answerSketch": "고시가 슈퍼푸드를 직접 예시로 든다 — 정의와 종류가 명확하지 않고 객관적·과학적 근거가 충분하지 않은 용어로 다른 제품보다 우수하다고 오인시키는 표시·광고에 해당한다.",
+      "citations": ["UNF-012"],
+      "teaches": "된다/안 된다로 끝내지 않고 어느 조문 때문인지 함께 준다 (PRD UC-4)"
+    },
+    {
+      "id": "EX-3",
+      "category": "out_of_scope",
+      "question": "수입 유자농축액 통관 절차는 어떻게 되나요?",
+      "expectedTools": [],
+      "expectedEscalation": "out_of_scope",
+      "answerSketch": "수입신고·통관은 이 에이전트의 소관이 아니다. 근거를 조회하지 않고 어디에 물어야 하는지 알려주며 넘긴다.",
+      "citations": [],
+      "teaches": "소관 밖은 판정 단계에서 걸러 도구를 한 번도 부르지 않는다 (PLAN D3)"
+    }
+  ]
+}

@@ -11,7 +11,7 @@
 
 ## 현재 상태
 
-1단계 「근거 문서와 평가셋」 진행 중. 슬라이스 1(법제처 API 수집)·2(공전 수집)·3(조회 도구 4종) 완료.
+1단계 「근거 문서와 평가셋」 진행 중. 슬라이스 1(법제처 API 수집)·2(공전 수집)·3(조회 도구 4종)·4(평가셋 18문항) 완료.
 
 ## 실행
 
@@ -20,6 +20,7 @@ uv run python collect_law.py    # 법제처 OPEN API — 표시·광고 법률·
 uv run python collect_code.py   # 식품안전나라 공전 서비스 — 식품공전·식품첨가물공전
 uv run python tools.py          # 조회 도구 4종 자체 점검
 uv run python tools.py lookup_food_type "유자즙 28%"   # 도구 하나를 직접 호출
+uv run python validate_goldenset.py                  # 평가셋 스키마·분포·중복·goldCheck 검증
 ```
 
 수집 스크립트 둘은 받은 원문을 사실 단위 청크로 자른다. 산출물은 `data/corpus/` 에 있고
@@ -73,6 +74,9 @@ chunking.py               조/항/호·계층 표기 파싱 규칙 (두 드라�
 sources.py                수집 대상 목록과 범위 밖 주제
 corpus.py                 청크 로더 — 본문과 별표를 한 목록으로 (별표는 여기서 청크가 된다)
 tools.py                  카테고리별 근거 조회 도구 4종 + 자체 점검
+validate_goldenset.py     평가셋 검증기 (스키마·분포·중복·goldCheck·금지 표현)
+data/goldenset.json       채점용 평가셋 18문항 (기대 도구·필수 사실·금지 표현·gold·goldCheck)
+data/prompt-examples.json 프롬프트 예시용 3문항 — **채점에 넣지 않는다**
 data/corpus/<CODE>.json   자료별 청크
 data/corpus/tables-*.json 고시 별표 (표시사항별 세부표시기준, 첨가물 표시 별표 등)
 data/corpus/collection-report.json      법제처 수집 리포트
@@ -86,6 +90,7 @@ data/corpus/collection-report-fsd.json  공전 수집 리포트 (항목별 청�
 
 - [ ] `uv run python collect_law.py` · `collect_code.py` 가 검증 통과로 끝난다
 - [ ] `uv run python tools.py` 가 도구 4종 점검을 통과한다
+- [ ] `uv run python validate_goldenset.py` 가 평가셋 검증을 통과한다
 - [ ] `uv run python -m agent "<질문>"` 이 답변 + 호출 도구 + 인용 근거를 출력한다
 - [ ] `uv run python evaluate.py` 가 S1·S2 수치를 출력하고 기준(≥0.75)을 넘는다
 - [ ] `uv run streamlit run app.py` 데모에서 답변·근거·검증 결과가 한 화면에 보인다
