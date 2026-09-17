@@ -21,6 +21,8 @@ S2 가 표현 채점이 된다. `--selftest` 가 이걸 확인한다 (완료 기
     uv run python evaluate.py --negative                  # 일부러 망친 답변이 0점인지 (역대조)
     uv run python evaluate.py --score data/runs/slice7.json   # 기록된 실행을 채점 (LLM 1회/문항)
     uv run python evaluate.py --out data/runs/baseline.json   # 파이프라인을 돌려 채점
+    uv run python evaluate.py --against data/runs/baseline.json --out data/runs/r1.json
+                                                          # 직전 회차와 축을 대조하고 (두 축이면 거부) 측정
 
 **채점기를 모범 답안에 맞춰 고치면 S5 가 무의미해진다** (PLAN 검증절 함정 3).
 `--reference` 가 실패하면 고칠 곳은 채점기이지 모범 답안이 아니다.
@@ -828,6 +830,39 @@ def negative() -> int:
     return 0 if not failed else 1
 
 
+# ─────────────────────────────────────── 축 가드 (PLAN D13 · 슬라이스 10)
+
+
+def axis_guard(prev_path: Path) -> int | None:
+    """직전 기록의 `RunConfig` 와 지금 설정을 대조한다. 두 축 이상 바뀌었으면 종료 코드 2.
+
+    **파이프라인을 돌리기 전에 멈춘다** — 거부할 실행에 18문항치 LLM 호출을 태울 이유가 없다.
+    한 회차에 두 축을 바꾸면 수치가 움직여도 어느 축이 움직였는지 읽을 수 없다. 그러면
+    개선 기록표가 「무엇을 바꿨더니 무엇이 달라졌다」가 아니라 「뭔가 바꿨더니 달라졌다」가 된다.
+    """
+    import agent
+
+    prev = json.loads(prev_path.read_text(encoding="utf-8")).get("config")
+    if not prev:
+        print(f"축 가드 — {prev_path.name} 에 config 가 없다. 대조할 것이 없어 거부한다.")
+        return 2
+
+    now = agent.RunConfig.current().as_json()
+    changed = agent.RunConfig.differing(prev, now)
+    print(f"축 가드 — 직전 기록 {prev_path.name}")
+    for axis in agent.RunConfig.AXES:
+        mark = "바뀜" if axis in changed else "  = "
+        arrow = f"{prev.get(axis)} → {now[axis]}" if axis in changed else f"{now[axis]}"
+        print(f"  {mark} {axis:13} {arrow}")
+    if len(changed) >= 2:
+        print()
+        print(f"거부 (종료 코드 2) — 한 회차에 {len(changed)}축이 바뀌었다: {', '.join(changed)}")
+        print("  한 번에 한 축만 바꾼다 (PLAN D13). 되돌리고 하나씩 재라.")
+        return 2
+    print("통과 — 바뀐 축 " + (changed[0] if changed else "없음 (재측정)"))
+    return None
+
+
 # ────────────────────────────────────────────────────────────────── 실행
 
 
@@ -837,6 +872,9 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--reference", action="store_true", help="모범 답안 채점 = S5 역검증")
     ap.add_argument("--negative", action="store_true", help="망친 답변이 0점인지 역대조")
     ap.add_argument("--score", type=Path, help="기록된 실행 JSON 을 채점")
+    ap.add_argument(
+        "--against", type=Path, help="직전 기록과 실행 설정을 대조 — 두 축 이상 바뀌었으면 종료 코드 2"
+    )
     ap.add_argument("--out", type=Path, help="채점 결과를 JSON 으로 저장")
     ap.add_argument("--limit", type=int, help="앞에서 N 문항만")
     args = ap.parse_args(argv)
@@ -845,6 +883,13 @@ def main(argv: list[str]) -> int:
         return selftest()
     if args.negative:
         return negative()
+    if args.against:
+        if args.reference or args.score:
+            print("--against 는 파이프라인 실행에만 쓴다 (모범 답안·기록 채점은 설정이 없다)")
+            return 2
+        blocked = axis_guard(args.against)
+        if blocked is not None:
+            return blocked
 
     items = load_items(args.limit)
     config: dict | None = None

@@ -1,0 +1,1144 @@
+{
+  "mode": "pipeline",
+  "at": "2026-09-18 04:08",
+  "judgeModel": "gpt-4o-mini",
+  "config": {
+    "router_prompt": "d07e8b28",
+    "answer_prompt": "34d6399a",
+    "topic_index": "a7cd423f",
+    "model": "gpt-4o-mini"
+  },
+  "causes": {
+    "라우팅 과선택": [
+      "FT-1",
+      "AC-2",
+      "AC-3"
+    ],
+    "답변 누락": [
+      "FT-4",
+      "LB-1",
+      "AD-1",
+      "AD-3",
+      "AC-1",
+      "MX-1"
+    ],
+    "넘기기 오판": [
+      "FT-4"
+    ]
+  },
+  "items": 18,
+  "S1": 0.8333,
+  "S2": 0.6667,
+  "S3violations": 0,
+  "S4violations": 1,
+  "scores": [
+    {
+      "id": "FT-1",
+      "S1": 0,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [
+        "S1: 호출 ['lookup_food_type', 'lookup_labeling'] ≠ 기대 ['lookup_food_type']"
+      ],
+      "causes": [
+        "라우팅 과선택"
+      ],
+      "expectedTools": [
+        "lookup_food_type"
+      ],
+      "tools": [
+        "lookup_food_type",
+        "lookup_labeling"
+      ],
+      "facts": [
+        {
+          "fact": "과·채주스는 과·채즙이 95% 이상이어야 한다",
+          "present": true,
+          "quote": "유자즙이 10% 이상 들어간 음료는 '유자음료'로 표시해야 한다.",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "과·채즙 10% 이상이면 과·채음료이므로 28%는 과·채음료에 해당한다",
+          "present": true,
+          "quote": "유자즙이 28%인 경우, '유자주스'라는 명칭은 과일즙 95% 이상이 아닌 한 적합하지 않다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 2,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "FDC-016",
+        "LBL-061"
+      ],
+      "citationsOutsideGold": [
+        "LBL-061"
+      ],
+      "answer": "유자즙이 10% 이상 들어간 음료는 '유자음료'로 표시해야 한다. 유자즙이 28%인 경우, '유자주스'라는 명칭은 과일즙 95% 이상이 아닌 한 적합하지 않다. [FDC-016] [LBL-061]",
+      "evidenceIds": [
+        "FDC-013",
+        "FDC-014",
+        "FDC-015",
+        "FDC-016",
+        "FDC-017",
+        "FDC-018",
+        "FDC-066",
+        "FDC-067",
+        "FDC-005",
+        "FDC-022",
+        "FDC-028",
+        "FDC-034",
+        "FDC-045",
+        "FDC-068",
+        "FDC-006",
+        "FDC-008",
+        "FDC-011",
+        "FDC-023",
+        "FDC-027",
+        "FDC-029",
+        "FDC-035",
+        "FDC-077",
+        "LBL-060",
+        "LBL-061",
+        "LBL-062",
+        "LBL-063",
+        "LBL-064",
+        "LBL-F1-003",
+        "LBL-F1-004",
+        "LBL-F1-029",
+        "LBL-F1-034",
+        "LBL-F1-016",
+        "LBL-027",
+        "LBL-032",
+        "LBL-F1-012",
+        "LBL-005",
+        "LBL-090"
+      ]
+    },
+    {
+      "id": "FT-2",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [
+        "lookup_food_type"
+      ],
+      "tools": [
+        "lookup_food_type"
+      ],
+      "facts": [
+        {
+          "fact": "액상차는 식물성 원료를 주원료로 추출 등의 방법으로 가공한 시럽상 또는 액상의 기호성 식품이다",
+          "present": true,
+          "quote": "액상차는 식물성 원료를 주원료로 하여 추출 등의 방법으로 가공한 것이거나 이에 식품 또는 식품첨가물을 가한 시럽상 또는 액상의 기호성 식품을 말한다.",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "혼합음료는 먹는 물 또는 동·식물성 원료에 식품 또는 식품첨가물을 가하여 음용할 수 있도록 가공한 것이다",
+          "present": true,
+          "quote": "혼합음료는 먹는 물 또는 동·식물성 원료에 식품 또는 식품첨가물을 가하여 음용할 수 있도록 가공한 것을 말한다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 2,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "FDC-005",
+        "FDC-045"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "유자 추출액으로 만든 시럽상 음료는 액상차로 신고할 수 있다. 액상차는 식물성 원료를 주원료로 하여 추출 등의 방법으로 가공한 것이거나 이에 식품 또는 식품첨가물을 가한 시럽상 또는 액상의 기호성 식품을 말한다. [FDC-005] \n\n혼합음료는 먹는 물 또는 동·식물성 원료에 식품 또는 식품첨가물을 가하여 음용할 수 있도록 가공한 것을 말한다. [FDC-045] \n\n따라서 액상차와 혼합음료는 원료와 가공 방법에 따라 구분된다. 액상차는 주로 식물성 원료의 추출물로 만들어지며, 혼합음료는 물이나 다른 원료와 혼합하여 가공한 음료를 의미한다.",
+      "evidenceIds": [
+        "FDC-002",
+        "FDC-003",
+        "FDC-004",
+        "FDC-005",
+        "FDC-006",
+        "FDC-007",
+        "FDC-042",
+        "FDC-043",
+        "FDC-044",
+        "FDC-045",
+        "FDC-046",
+        "FDC-047",
+        "FDC-008",
+        "FDC-028",
+        "FDC-013",
+        "FDC-086",
+        "FDC-018",
+        "FDC-025",
+        "FDC-052",
+        "FDC-056",
+        "FDC-010"
+      ]
+    },
+    {
+      "id": "FT-3",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [
+        "lookup_food_type"
+      ],
+      "tools": [
+        "lookup_food_type"
+      ],
+      "facts": [
+        {
+          "fact": "판정하려면 과·채즙 함량이 필요하다고 명시한다",
+          "present": true,
+          "quote": "과·채즙 10% 이상을 포함해야 한다.",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "과·채즙 95% 이상이면 과·채주스, 10% 이상이면 과·채음료라는 갈래를 함께 보여준다",
+          "present": true,
+          "quote": "과·채음료는 농축과·채즙(또는 과·채분) 또는 과·채주스 등을 원료로 하여 가공한 것으로, 과일즙, 채소즙 또는 과·채즙 10% 이상을 포함해야 한다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 6,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "FDC-016"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "유자 음료는 과일·채소류음료로 신고해야 한다. 과일 또는 채소를 주원료로 하여 가공한 것으로서 농축과·채즙, 과·채주스, 과·채음료를 포함한다. 과·채음료는 농축과·채즙(또는 과·채분) 또는 과·채주스 등을 원료로 하여 가공한 것으로, 과일즙, 채소즙 또는 과·채즙 10% 이상을 포함해야 한다. [FDC-016]",
+      "evidenceIds": [
+        "FDC-005",
+        "FDC-016",
+        "FDC-022",
+        "FDC-028",
+        "FDC-034",
+        "FDC-045",
+        "FDC-001",
+        "FDC-042",
+        "FDC-067",
+        "FDC-077",
+        "FDC-079",
+        "FDC-086",
+        "FDC-013",
+        "FDC-011",
+        "FDC-017",
+        "FDC-027",
+        "FDC-029",
+        "FDC-035",
+        "FDC-046"
+      ]
+    },
+    {
+      "id": "FT-4",
+      "S1": 1,
+      "S2": 0,
+      "S3": 1,
+      "S4": 0,
+      "why": [
+        "S2 필수 사실 누락: 식품에 사용할 수 있는 원료의 목록은 식품공전 [별표 1]에 있고 그 별표는 수집 범위에 없다 — 가부를 단정하지 않고 넘긴다 — 답변에서 식품에 사용할 수 있는 원료의 목록이 식품공전 [별표 1]에 있다는 사실을 명시적으로 언급하지 않았다.",
+        "S4: 넘기기 None (기대 no_evidence)"
+      ],
+      "causes": [
+        "넘기기 오판",
+        "답변 누락"
+      ],
+      "expectedTools": [
+        "lookup_food_type"
+      ],
+      "tools": [
+        "lookup_food_type"
+      ],
+      "facts": [
+        {
+          "fact": "식품에 사용할 수 있는 원료의 목록은 식품공전 [별표 1]에 있고 그 별표는 수집 범위에 없다 — 가부를 단정하지 않고 넘긴다",
+          "present": false,
+          "quote": "",
+          "votes": "0/3",
+          "why": "답변에서 식품에 사용할 수 있는 원료의 목록이 식품공전 [별표 1]에 있다는 사실을 명시적으로 언급하지 않았다."
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": "no_evidence",
+      "escalation": null,
+      "citations": [
+        "FDC-049",
+        "FDC-057"
+      ],
+      "citationsOutsideGold": [
+        "FDC-049",
+        "FDC-057"
+      ],
+      "answer": "유자 발효추출물은 식품원료로 사용할 수 있는지 여부는 명확히 언급되지 않는다. 식품원료의 구비요건에 따르면, 원료는 식용을 목적으로 채취, 취급, 가공, 제조 또는 관리된 것이어야 하며, 안전성을 가지고 있어야 한다. 또한, 식품원료 판단기준에 따라 독성이나 부작용이 없고 식용근거가 있는 경우에만 사용 가능하다. 유자 발효추출물의 안전성과 식용근거에 대한 정보가 필요하다. [FDC-049][FDC-057]",
+      "evidenceIds": [
+        "FDC-048",
+        "FDC-049",
+        "FDC-050",
+        "FDC-051",
+        "FDC-052",
+        "FDC-053",
+        "FDC-054",
+        "FDC-055",
+        "FDC-056",
+        "FDC-057",
+        "FDC-058",
+        "FDC-059",
+        "FDC-060",
+        "FDC-061",
+        "FDC-005"
+      ]
+    },
+    {
+      "id": "LB-1",
+      "S1": 1,
+      "S2": 0,
+      "S3": 1,
+      "S4": 1,
+      "why": [
+        "S2 필수 사실 누락: 원재료명·영양성분·용기포장 재질·품목보고번호·주의사항도 표시사항이다 — 채점기가 짚은 자리가 답변에 없다 — 「원재료명, 7) 영양성분, 8) 용기ㆍ포장 재질, 9) 품목보고번호, 1」"
+      ],
+      "causes": [
+        "답변 누락"
+      ],
+      "expectedTools": [
+        "lookup_labeling"
+      ],
+      "tools": [
+        "lookup_labeling"
+      ],
+      "facts": [
+        {
+          "fact": "제품명·식품유형·영업소(장)의 명칭 및 소재지·소비기한·내용량 및 내용량에 해당하는 열량이 표시사항이다",
+          "present": true,
+          "quote": "제품명, 2) 식품유형, 3) 영업소(장)의 명칭(상호) 및 소재지, 4) 소비기한, 5) 내용량 및 내용량에 해당하는 열량",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "원재료명·영양성분·용기포장 재질·품목보고번호·주의사항도 표시사항이다",
+          "present": false,
+          "quote": "원재료명, 7) 영양성분, 8) 용기ㆍ포장 재질, 9) 품목보고번호, 12) 주의사항(해당 경우에 한함)",
+          "votes": "0/3",
+          "why": "채점기가 짚은 자리가 답변에 없다 — 「원재료명, 7) 영양성분, 8) 용기ㆍ포장 재질, 9) 품목보고번호, 1」"
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 1,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "LBL-061",
+        "LBL-062"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "과·채음료 라벨에 반드시 들어가야 하는 표시사항은 다음과 같다: 1) 제품명, 2) 식품유형, 3) 영업소(장)의 명칭(상호) 및 소재지, 4) 소비기한, 5) 내용량 및 내용량에 해당하는 열량, 6) 원재료명, 7) 영양성분, 8) 용기ㆍ포장 재질, 9) 품목보고번호, 10) 성분명 및 함량(해당 경우에 한함), 11) 보관방법(해당 경우에 한함), 12) 주의사항(해당 경우에 한함), 13) 조사처리식품(해당 경우에 한함), 14) 유전자변형식품(해당 경우에 한함)이다. [LBL-061] [LBL-062]",
+      "evidenceIds": [
+        "LBL-060",
+        "LBL-061",
+        "LBL-062",
+        "LBL-063",
+        "LBL-064",
+        "LBL-013",
+        "LBL-014",
+        "LBL-015",
+        "LBL-016",
+        "LBL-017",
+        "LBL-018",
+        "LBL-019",
+        "LBL-020",
+        "LBL-021",
+        "LBL-022"
+      ]
+    },
+    {
+      "id": "LB-2",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [
+        "lookup_labeling"
+      ],
+      "tools": [
+        "lookup_labeling"
+      ],
+      "facts": [
+        {
+          "fact": "원재료명을 제품명의 일부로 쓰면 그 함량을 주표시면에 14포인트 이상의 글씨로 표시해야 한다",
+          "present": true,
+          "quote": "주표시면에 14포인트 이상의 글씨로 표시해야 하며",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "제품명 글씨크기가 22포인트 미만이면 7포인트 이상으로 표시할 수 있다",
+          "present": true,
+          "quote": "제품명의 글씨크기가 22포인트 미만인 경우에는 7포인트 이상의 글씨로 표시할 수 있다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 3,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "LBL-F1-003",
+        "LBL-F1-004"
+      ],
+      "citationsOutsideGold": [
+        "LBL-F1-004"
+      ],
+      "answer": "제품명을 '유자에이드'로 할 경우, 유자 함량을 표시할 필요는 없다. '유자에이드'는 요리명으로 사용되기 때문에 함량표시를 하지 않을 수 있다. 제품명에 유자 함량을 표시할 경우, 주표시면에 14포인트 이상의 글씨로 표시해야 하며, 제품명의 글씨크기가 22포인트 미만인 경우에는 7포인트 이상의 글씨로 표시할 수 있다. [LBL-F1-003] [LBL-F1-004]",
+      "evidenceIds": [
+        "LBL-F1-003",
+        "LBL-F1-004",
+        "LBL-F1-029",
+        "LBL-F1-034",
+        "LBL-F1-016",
+        "LBL-035",
+        "LBL-036",
+        "LBL-037",
+        "LBL-038",
+        "LBL-039",
+        "LBL-003",
+        "LBL-004",
+        "LBL-005",
+        "LBL-006",
+        "LBL-007",
+        "LBL-008"
+      ]
+    },
+    {
+      "id": "LB-3",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [
+        "lookup_labeling"
+      ],
+      "tools": [
+        "lookup_labeling"
+      ],
+      "facts": [
+        {
+          "fact": "과일·채소류음료 중 가열하지 않은 제품은 가열하지 않은 제품임을 표시하여야 한다",
+          "present": true,
+          "quote": "가열하지 않은 제품임을 표시해야 한다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "LBL-063"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "가열하지 않은 제품임을 표시해야 한다. [LBL-063]",
+      "evidenceIds": [
+        "LBL-060",
+        "LBL-061",
+        "LBL-062",
+        "LBL-063",
+        "LBL-064",
+        "LBL-013",
+        "LBL-014",
+        "LBL-015",
+        "LBL-016",
+        "LBL-017",
+        "LBL-018",
+        "LBL-019",
+        "LBL-020",
+        "LBL-021",
+        "LBL-022"
+      ]
+    },
+    {
+      "id": "AD-1",
+      "S1": 1,
+      "S2": 0,
+      "S3": 1,
+      "S4": 1,
+      "why": [
+        "S2 필수 사실 누락: 비타민C의 사용기준은 II. 2. 1)의 규정에 따르며 수치로 된 사용량 한도가 따로 정해져 있지 않다 — 답변에서 비타민C의 사용기준에 대한 언급이 없고, 수치로 된 사용량 한도에 대한 정보도 포함되어 있지 않다."
+      ],
+      "causes": [
+        "답변 누락"
+      ],
+      "expectedTools": [
+        "lookup_additive"
+      ],
+      "tools": [
+        "lookup_additive"
+      ],
+      "facts": [
+        {
+          "fact": "비타민C의 사용기준은 II. 2. 1)의 규정에 따르며 수치로 된 사용량 한도가 따로 정해져 있지 않다",
+          "present": false,
+          "quote": "비타민C의 사용기준은 II. 2. 1)의 규정에 따르며 수치로 된 사용량 한도가 따로 정해져 있지 않다",
+          "votes": "0/3",
+          "why": "답변에서 비타민C의 사용기준에 대한 언급이 없고, 수치로 된 사용량 한도에 대한 정보도 포함되어 있지 않다."
+        },
+        {
+          "fact": "식품 중에 첨가되는 식품첨가물의 양은 기술적 효과를 달성하는 데 필요한 최소량으로 사용하여야 한다",
+          "present": true,
+          "quote": "식품 중에 첨가되는 식품첨가물의 양은 물리적, 영양학적 또는 기타 기술적 효과를 달성하는데 필요한 최소량으로 사용하여야 한다",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "FAC-001"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "비타민C는 식품 중에 첨가되는 식품첨가물의 양은 물리적, 영양학적 또는 기타 기술적 효과를 달성하는데 필요한 최소량으로 사용하여야 한다. [FAC-001]",
+      "evidenceIds": [
+        "FAC-167",
+        "FAC-726",
+        "LBL-T6-002",
+        "LBL-T6-003",
+        "FAC-001",
+        "FAC-002",
+        "FAC-003",
+        "FAC-004",
+        "FAC-005",
+        "FAC-006",
+        "FAC-007",
+        "FAC-538",
+        "FAC-873",
+        "FAC-168",
+        "FAC-727",
+        "FAC-728",
+        "FAC-471",
+        "FAC-008",
+        "FAC-010"
+      ]
+    },
+    {
+      "id": "AD-2",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [
+        "lookup_additive"
+      ],
+      "tools": [
+        "lookup_additive"
+      ],
+      "facts": [
+        {
+          "fact": "구연산은 별표 6 대상이므로 고시 명칭·간략명 또는 주용도로 표시할 수 있다",
+          "present": true,
+          "quote": "구연산은 산도조절제로 사용되며, 별표 6에 따라 명칭과 주용도를 함께 표시해야 한다.",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "별표 6 에서 구연산의 주용도는 산도조절제다",
+          "present": true,
+          "quote": "구연산은 산도조절제로 사용되며, 별표 6에 따라 명칭과 주용도를 함께 표시해야 한다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 1,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "LBL-T6-001",
+        "LBL-T4-001"
+      ],
+      "citationsOutsideGold": [
+        "LBL-T4-001"
+      ],
+      "answer": "원재료명에는 \"구연산\"이라고 적어야 한다. 구연산은 산도조절제로 사용되며, 별표 6에 따라 명칭과 주용도를 함께 표시해야 한다. [LBL-T6-001] [LBL-T4-001]",
+      "evidenceIds": [
+        "FAC-053",
+        "LBL-T6-001",
+        "FAC-001",
+        "LBL-T4-001",
+        "FAC-054",
+        "FAC-055",
+        "FAC-056",
+        "FAC-057",
+        "FAC-058",
+        "FAC-743",
+        "FAC-763",
+        "FAC-774",
+        "FAC-787",
+        "FAC-788",
+        "FAC-789",
+        "FAC-803"
+      ]
+    },
+    {
+      "id": "AD-3",
+      "S1": 1,
+      "S2": 0,
+      "S3": 1,
+      "S4": 1,
+      "why": [
+        "S2 필수 사실 누락: L-아스코브산나트륨의 간략명은 아스코브산나트륨, 아스코브산Na, 비타민C-Na 다 — 채점기가 짚은 자리가 답변에 없다 — 「아스코브산나트륨은 라벨에 아스코브산나트륨, 아스코브산Na, 비타민C-Na」"
+      ],
+      "causes": [
+        "답변 누락"
+      ],
+      "expectedTools": [
+        "lookup_additive"
+      ],
+      "tools": [
+        "lookup_additive"
+      ],
+      "facts": [
+        {
+          "fact": "L-아스코브산나트륨의 간략명은 아스코브산나트륨, 아스코브산Na, 비타민C-Na 다",
+          "present": false,
+          "quote": "아스코브산나트륨은 라벨에 아스코브산나트륨, 아스코브산Na, 비타민C-Na로 줄여 적을 수 있다.",
+          "votes": "0/3",
+          "why": "채점기가 짚은 자리가 답변에 없다 — 「아스코브산나트륨은 라벨에 아스코브산나트륨, 아스코브산Na, 비타민C-Na」"
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "LBL-T6-003"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "아스코르브산나트륨은 라벨에 아스코브산나트륨, 아스코브산Na, 비타민C-Na로 줄여 적을 수 있다. [LBL-T6-003]",
+      "evidenceIds": [
+        "FAC-265",
+        "LBL-T6-003",
+        "FAC-001",
+        "LBL-T4-001",
+        "FDC-096"
+      ]
+    },
+    {
+      "id": "AC-1",
+      "S1": 1,
+      "S2": 0,
+      "S3": 1,
+      "S4": 1,
+      "why": [
+        "S2 필수 사실 누락: 건강기능식품이 아닌 것을 건강기능식품으로 인식할 우려가 있는 표시·광고도 금지된다 — 답변에서 건강기능식품이 아닌 것을 건강기능식품으로 인식할 우려가 있는 표시·광고에 대한 언급이 없다."
+      ],
+      "causes": [
+        "답변 누락"
+      ],
+      "expectedTools": [
+        "lookup_ad_claims"
+      ],
+      "tools": [
+        "lookup_ad_claims"
+      ],
+      "facts": [
+        {
+          "fact": "질병의 예방·치료에 효능이 있는 것으로 인식할 우려가 있는 표시·광고는 금지된다",
+          "present": true,
+          "quote": "'면역력에 좋은 유자'라는 표현은 질병의 예방·치료에 효능이 있는 것으로 인식할 우려가 있는 표시로, 부당한 표시 또는 광고행위에 해당한다.",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "건강기능식품이 아닌 것을 건강기능식품으로 인식할 우려가 있는 표시·광고도 금지된다",
+          "present": false,
+          "quote": "",
+          "votes": "0/3",
+          "why": "답변에서 건강기능식품이 아닌 것을 건강기능식품으로 인식할 우려가 있는 표시·광고에 대한 언급이 없다."
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "FLA-031"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "'면역력에 좋은 유자'라는 표현은 질병의 예방·치료에 효능이 있는 것으로 인식할 우려가 있는 표시로, 부당한 표시 또는 광고행위에 해당한다. [FLA-031]",
+      "evidenceIds": [
+        "FLA-031",
+        "FLA-032",
+        "UNF-002",
+        "FLD-002",
+        "FLA-033",
+        "UNF-003",
+        "FLD-003",
+        "FLD-004",
+        "FLD-005",
+        "FLD-006",
+        "FLA-002",
+        "FLA-003",
+        "FLA-004",
+        "FLA-005",
+        "FLA-006",
+        "FLA-007",
+        "FLA-008",
+        "FLA-009",
+        "FLA-010",
+        "FLA-011",
+        "FLA-012",
+        "FLA-013"
+      ]
+    },
+    {
+      "id": "AC-2",
+      "S1": 0,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [
+        "S1: 호출 ['lookup_ad_claims', 'lookup_labeling'] ≠ 기대 ['lookup_ad_claims']"
+      ],
+      "causes": [
+        "라우팅 과선택"
+      ],
+      "expectedTools": [
+        "lookup_ad_claims"
+      ],
+      "tools": [
+        "lookup_labeling",
+        "lookup_ad_claims"
+      ],
+      "facts": [
+        {
+          "fact": "합성향료물질·착색료·보존료 또는 인공이나 수확 후 첨가되는 화학적 합성품이 포함된 식품등에 천연·자연 표시·광고를 하는 것은 소비자를 기만하는 표시·광고다",
+          "present": true,
+          "quote": "'천연'이라는 용어는 합성향료물질, 착색료, 보존료 또는 인공 화학적 합성품이 포함된 식품에 사용할 수 없다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "UNF-009"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "'천연'이라는 용어는 합성향료물질, 착색료, 보존료 또는 인공 화학적 합성품이 포함된 식품에 사용할 수 없다. 비타민C와 구연산이 들어간 경우, 이는 인공적으로 합성된 성분으로 간주될 수 있다. 따라서 '천연 유자음료'라는 표시가 소비자를 기만하는 광고로 판단될 수 있다. [UNF-009]",
+      "evidenceIds": [
+        "LBL-060",
+        "LBL-061",
+        "LBL-062",
+        "LBL-063",
+        "LBL-064",
+        "LBL-T4-001",
+        "LBL-T5-001",
+        "LBL-T5-002",
+        "LBL-T6-001",
+        "LBL-T6-008",
+        "LBL-017",
+        "LBL-005",
+        "UNF-004",
+        "UNF-005",
+        "UNF-006",
+        "UNF-007",
+        "UNF-008",
+        "UNF-009",
+        "UNF-010",
+        "UNF-011",
+        "UNF-012",
+        "UNF-013",
+        "UNF-015",
+        "UNF-T2-001"
+      ]
+    },
+    {
+      "id": "AC-3",
+      "S1": 0,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [
+        "S1: 호출 ['lookup_ad_claims', 'lookup_food_type'] ≠ 기대 ['lookup_ad_claims']"
+      ],
+      "causes": [
+        "라우팅 과선택"
+      ],
+      "expectedTools": [
+        "lookup_ad_claims"
+      ],
+      "tools": [
+        "lookup_ad_claims",
+        "lookup_food_type"
+      ],
+      "facts": [
+        {
+          "fact": "표시한 1개의 원재료를 제외하고 어떤 물질이 남아 있으면 100% 표시·광고는 소비자를 기만하는 표시·광고다",
+          "present": true,
+          "quote": "다만, 농축액을 희석하여 원상태로 환원한 제품의 경우 환원된 단일 원재료의 농도가 100% 이상이면 식품첨가물이 포함되어 있더라도 100%의 표시를 할 수 있다.",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "농축액을 희석해 환원한 제품은 환원된 단일 원재료 농도가 100% 이상이면 식품첨가물이 있어도 100% 표시가 가능하되, 100% 표시 바로 옆 또는 아래에 같은 글씨크기로 그 식품첨가물의 명칭 또는 용도를 괄호로 표시해야 한다",
+          "present": true,
+          "quote": "이 경우 100% 표시 바로 옆 또는 아래에 괄호로 100% 표시와 동일한 글씨크기로 식품첨가물의 명칭 또는 용도를 표시해야 한다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 1,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "UNF-010"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "'100% 유자주스'라고 표시할 수 있다. 다만, 농축액을 희석하여 원상태로 환원한 제품의 경우 환원된 단일 원재료의 농도가 100% 이상이면 식품첨가물이 포함되어 있더라도 100%의 표시를 할 수 있다. 이 경우 100% 표시 바로 옆 또는 아래에 괄호로 100% 표시와 동일한 글씨크기로 식품첨가물의 명칭 또는 용도를 표시해야 한다. [UNF-010]",
+      "evidenceIds": [
+        "UNF-004",
+        "UNF-005",
+        "UNF-006",
+        "UNF-007",
+        "UNF-008",
+        "UNF-009",
+        "UNF-010",
+        "UNF-011",
+        "UNF-012",
+        "UNF-013",
+        "UNF-015",
+        "UNF-T2-001",
+        "FDC-013",
+        "FDC-014",
+        "FDC-015",
+        "FDC-016",
+        "FDC-017",
+        "FDC-018",
+        "FDC-066",
+        "FDC-067",
+        "FDC-005",
+        "FDC-022",
+        "FDC-028",
+        "FDC-034",
+        "FDC-045",
+        "FDC-046",
+        "FDC-006",
+        "FDC-011",
+        "FDC-023",
+        "FDC-029",
+        "FDC-035",
+        "FDC-092"
+      ]
+    },
+    {
+      "id": "AC-4",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [
+        "lookup_ad_claims"
+      ],
+      "tools": [
+        "lookup_ad_claims"
+      ],
+      "facts": [
+        {
+          "fact": "「식품첨가물의 기준 및 규격」에서 규정하고 있지 않은 명칭을 사용한 표시·광고는 소비자를 기만하는 표시·광고이며, 무방부제·방부제 무첨가가 그 예시로 적혀 있다",
+          "present": true,
+          "quote": "식품의약품안전처장이 고시한「식품첨가물의 기준 및 규격」에서 규정하고 있지 않는 명칭을 사용한 것으로, 예시로 '무방부제'가 포함된다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "UNF-008"
+      ],
+      "citationsOutsideGold": [],
+      "answer": "'무방부제'라는 표기는 소비자를 기만하는 표시 또는 광고에 해당한다. 식품의약품안전처장이 고시한「식품첨가물의 기준 및 규격」에서 규정하고 있지 않는 명칭을 사용한 것으로, 예시로 '무방부제'가 포함된다. [UNF-008]",
+      "evidenceIds": [
+        "UNF-008"
+      ]
+    },
+    {
+      "id": "MX-1",
+      "S1": 1,
+      "S2": 0,
+      "S3": 1,
+      "S4": 1,
+      "why": [
+        "S2 필수 사실 누락: 비타민C의 사용기준은 II. 2. 1)의 규정에 따르며 수치 한도가 따로 없다 — 채점기가 짚은 자리가 답변에 없다 — 「II. 2. 1)의 규정에 따르며 수치 한도가 따로 없다」"
+      ],
+      "causes": [
+        "답변 누락"
+      ],
+      "expectedTools": [
+        "lookup_additive",
+        "lookup_labeling"
+      ],
+      "tools": [
+        "lookup_additive",
+        "lookup_labeling"
+      ],
+      "facts": [
+        {
+          "fact": "비타민C의 사용기준은 II. 2. 1)의 규정에 따르며 수치 한도가 따로 없다",
+          "present": false,
+          "quote": "II. 2. 1)의 규정에 따르며 수치 한도가 따로 없다",
+          "votes": "0/3",
+          "why": "채점기가 짚은 자리가 답변에 없다 — 「II. 2. 1)의 규정에 따르며 수치 한도가 따로 없다」"
+        },
+        {
+          "fact": "비타민C는 별표 6 대상이고 간략명은 Vit. C, 주용도는 영양강화제·산도조절제·산화방지제다",
+          "present": true,
+          "quote": "비타민C는 영양강화제 및 산화방지제로 사용 가능하며",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "별표 6 대상은 고시 명칭·간략명 또는 주용도 중 하나로 표시하되, 별표 6 이 정한 주용도가 아닌 용도로 쓴 경우에는 명칭 또는 간략명으로 표시해야 한다",
+          "present": true,
+          "quote": "주용도는 \"영양강화제, 산화방지제\"로 함께 적어야 한다",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "FAC-727",
+        "LBL-T4-001"
+      ],
+      "citationsOutsideGold": [
+        "FAC-727",
+        "LBL-T4-001"
+      ],
+      "answer": "비타민C를 이 음료에 쓸 수 있다. 비타민C는 영양강화제 및 산화방지제로 사용 가능하며, II. 2. 1)의 규정에 따라 사용하여야 한다. [FAC-727] \n라벨 원재료명에는 \"비타민C\" 또는 \"L-아스코르브산\"으로 표시하고, 주용도는 \"영양강화제, 산화방지제\"로 함께 적어야 한다. [LBL-T4-001]",
+      "evidenceIds": [
+        "FAC-167",
+        "FAC-726",
+        "LBL-T6-002",
+        "LBL-T6-003",
+        "FAC-001",
+        "LBL-T4-001",
+        "FDC-096",
+        "FAC-444",
+        "FAC-727",
+        "FAC-728",
+        "FAC-002",
+        "FAC-166",
+        "FAC-168",
+        "FAC-711",
+        "FAC-712",
+        "FAC-715",
+        "FAC-717",
+        "FAC-719",
+        "LBL-060",
+        "LBL-061",
+        "LBL-062",
+        "LBL-063",
+        "LBL-064",
+        "LBL-F1-012",
+        "LBL-F1-013",
+        "LBL-F1-014",
+        "LBL-F1-015",
+        "LBL-F1-016",
+        "LBL-T4-001"
+      ]
+    },
+    {
+      "id": "MX-2",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [
+        "lookup_food_type",
+        "lookup_labeling"
+      ],
+      "tools": [
+        "lookup_food_type",
+        "lookup_labeling"
+      ],
+      "facts": [
+        {
+          "fact": "과·채즙 10% 이상이면 과·채음료이고 95% 이상이어야 과·채주스다 — 28%는 과·채음료다",
+          "present": true,
+          "quote": "유자즙 28% 음료는 과일·채소류음료에 해당한다.",
+          "votes": "3/3",
+          "why": ""
+        },
+        {
+          "fact": "원재료명을 제품명의 일부로 쓰면 그 함량을 주표시면에 14포인트 이상의 글씨로 표시해야 한다",
+          "present": true,
+          "quote": "원재료명은 유자와 그 함량을 주표시면에 14포인트 이상의 글씨로 표시해야 하며, 유자 원재료가 추출물인 경우에는 고형분 함량도 함께 표시해야 한다.",
+          "votes": "2/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 4,
+      "expectedEscalation": null,
+      "escalation": null,
+      "citations": [
+        "FDC-016",
+        "LBL-061",
+        "LBL-063",
+        "LBL-F1-003"
+      ],
+      "citationsOutsideGold": [
+        "LBL-061",
+        "LBL-063"
+      ],
+      "answer": "유자즙 28% 음료는 과일·채소류음료에 해당한다. 과·채즙 10% 이상을 원료로 하여 가공한 것으로 분류된다. [FDC-016] \n\n제품명에 '유자'를 넣을 경우, 유자의 함량을 표시해야 한다. 원재료명은 유자와 그 함량을 주표시면에 14포인트 이상의 글씨로 표시해야 하며, 유자 원재료가 추출물인 경우에는 고형분 함량도 함께 표시해야 한다. [LBL-061] [LBL-063] [LBL-F1-003]",
+      "evidenceIds": [
+        "FDC-005",
+        "FDC-016",
+        "FDC-022",
+        "FDC-028",
+        "FDC-034",
+        "FDC-045",
+        "FDC-001",
+        "FDC-066",
+        "FDC-067",
+        "FDC-042",
+        "FDC-046",
+        "FDC-077",
+        "FDC-079",
+        "FDC-060",
+        "FDC-008",
+        "FDC-078",
+        "FDC-050",
+        "FDC-052",
+        "FDC-059",
+        "FDC-074",
+        "LBL-060",
+        "LBL-061",
+        "LBL-062",
+        "LBL-063",
+        "LBL-064",
+        "LBL-F1-003",
+        "LBL-F1-004",
+        "LBL-F1-029",
+        "LBL-F1-034",
+        "LBL-F1-016",
+        "LBL-003",
+        "LBL-084",
+        "LBL-077",
+        "LBL-027"
+      ]
+    },
+    {
+      "id": "OS-1",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [],
+      "tools": [],
+      "facts": [
+        {
+          "fact": "HACCP 은 이 에이전트의 소관(표시·규격)이 아님을 밝히고 어디에 물어야 하는지 알려주며 넘긴다",
+          "present": true,
+          "quote": "이 질문은 제가 다루는 범위(음료류 식품의 표시·규격) 밖입니다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": "out_of_scope",
+      "escalation": "out_of_scope",
+      "citations": [],
+      "citationsOutsideGold": [],
+      "answer": "이 질문은 제가 다루는 범위(음료류 식품의 표시·규격) 밖입니다. 답하지 않고 넘깁니다.\n\n문의처: 영업등록·HACCP·시설기준·수입신고·위반 시 처분 수위는 관할 시·군·구 위생부서가 소관입니다. 식약처 식품안전상담 1399, 식품안전나라(foodsafetykorea.go.kr)에서도 확인할 수 있습니다.",
+      "evidenceIds": []
+    },
+    {
+      "id": "OS-2",
+      "S1": 1,
+      "S2": 1,
+      "S3": 1,
+      "S4": 1,
+      "why": [],
+      "causes": [],
+      "expectedTools": [],
+      "tools": [],
+      "facts": [
+        {
+          "fact": "처분 수위는 답하지 않는다는 것을 밝히고 넘긴다",
+          "present": true,
+          "quote": "이 질문은 제가 다루는 범위(음료류 식품의 표시·규격) 밖입니다. 답하지 않고 넘깁니다.",
+          "votes": "3/3",
+          "why": ""
+        }
+      ],
+      "forbiddenHits": [],
+      "violations": [],
+      "verifyChecked": 0,
+      "expectedEscalation": "out_of_scope",
+      "escalation": "out_of_scope",
+      "citations": [],
+      "citationsOutsideGold": [],
+      "answer": "이 질문은 제가 다루는 범위(음료류 식품의 표시·규격) 밖입니다. 답하지 않고 넘깁니다.\n\n문의처: 영업등록·HACCP·시설기준·수입신고·위반 시 처분 수위는 관할 시·군·구 위생부서가 소관입니다. 식약처 식품안전상담 1399, 식품안전나라(foodsafetykorea.go.kr)에서도 확인할 수 있습니다.",
+      "evidenceIds": []
+    }
+  ]
+}
