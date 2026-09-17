@@ -12,8 +12,9 @@
 ## 현재 상태
 
 1단계 완료(슬라이스 1~5), 2단계 「검증·측정·개선」 진행 중. 법제처 API 수집 · 공전 수집 ·
-조회 도구 4종 · 평가셋 18문항 · `판정 → 근거 조립 → 답변 → 검증` 파이프라인까지 돌아간다.
-**넘기기 두 갈래 분리와 채점기는 아직 없다** (슬라이스 7·8).
+조회 도구 4종 · 평가셋 18문항 · `판정 → 근거 조립 → 답변 → 검증 → (넘기기)` 파이프라인까지
+돌아간다. 넘기기는 두 갈래로 갈린다 — 소관 밖(`out_of_scope`)은 판정 노드가, 소관이지만 근거에
+답이 없는 것(`no_evidence`)은 답변 노드가 정한다. **채점기는 아직 없다** (슬라이스 8).
 
 ## 실행
 
@@ -24,10 +25,10 @@ uv run python tools.py          # 조회 도구 4종 자체 점검
 uv run python tools.py lookup_food_type "유자즙 28%"   # 도구 하나를 직접 호출
 uv run python validate_goldenset.py                  # 평가셋 스키마·분포·중복·goldCheck 검증
 uv run python verify.py --selftest                   # 환각 검증 규칙 자체 확인 (API 키 불필요)
-uv run python verify.py --replay data/runs/slice6.json   # 기록된 답변에 검증 규칙을 다시 건다
+uv run python verify.py --replay data/runs/slice7.json   # 기록된 답변에 검증 규칙을 다시 건다
 
 uv run python -m agent "유자즙 28% 음료를 유자주스로 팔아도 되나요?"   # 답변 + 호출 도구 + 인용 근거 + 검증
-uv run python -m agent --goldenset --out data/runs/slice6.json       # 평가셋 전 문항 관통
+uv run python -m agent --goldenset --out data/runs/slice7.json       # 평가셋 전 문항 관통
 ```
 
 에이전트 실행에는 `OPENAI_API_KEY` 가 필요하다. 모델은 `OPENAI_MODEL` 로 바꾼다 (기본 `gpt-4o-mini`).
@@ -85,15 +86,16 @@ corpus.py                 청크 로더 — 본문과 별표를 한 목록으로
 tools.py                  카테고리별 근거 조회 도구 4종 + 자체 점검
 validate_goldenset.py     평가셋 검증기 (스키마·분포·중복·goldCheck·금지 표현)
 verify.py                 환각 검증 규칙 — 수치·조문·유형명을 근거와 대조 + 자체 확인
-agent.py                  LangGraph 파이프라인 — 판정 → 근거 조립 → 답변 → 검증 (+재생성 1회) + CLI
+agent.py                  LangGraph 파이프라인 — 판정 → 근거 조립 → 답변 → 검증 (+재생성 1회) → 넘기기 + CLI
 data/goldenset.json       채점용 평가셋 18문항 (기대 도구·필수 사실·금지 표현·gold·goldCheck)
-data/prompt-examples.json 프롬프트 예시용 3문항 — **채점에 넣지 않는다**
+data/prompt-examples.json 프롬프트 예시용 4문항 — **채점에 넣지 않는다**
 data/corpus/<CODE>.json   자료별 청크
 data/corpus/tables-*.json 고시 별표 (표시사항별 세부표시기준, 첨가물 표시 별표 등)
 data/corpus/collection-report.json      법제처 수집 리포트
 data/corpus/collection-report-fsd.json  공전 수집 리포트 (항목별 청크 수·미시행 개정)
 data/runs/slice5.json     슬라이스 5 관통 기록 (문항별 도구·근거 ID·답변) — 기준 측정의 출발점
 data/runs/slice6.json     슬라이스 6 관통 기록 (+ 위반 목록·재생성 여부·답변 이력)
+data/runs/slice7.json     슬라이스 7 관통 기록 (+ 넘기기 갈래와 기대 라벨)
 docs/VERIFY-NOTES.md      검증 규칙이 무엇을 잡고 무엇을 못 잡나 (실측과 한계)
 .cache/fsd/               받은 공전 PDF (gitignore — 4.8MB 짜리가 있다)
 ```

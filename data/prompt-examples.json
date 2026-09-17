@@ -1,26 +1,34 @@
 {
   "version": "1",
   "collectedAt": "2026-09-17",
-  "note": "프롬프트에 예시(few-shot)로 넣는 문항. **채점에 넣지 않는다** — PRD 4절 평가셋 요건의 마지막 줄. goldenset.json 과 질문이 겹치면 validate_goldenset.py 가 실패한다.",
+  "note": "프롬프트에 예시(few-shot)로 넣는 문항. **채점에 넣지 않는다** — PRD 4절 평가셋 요건의 마지막 줄. goldenset.json 과 질문이 겹치면 validate_goldenset.py 가 실패한다. 예시는 answered 와 no_evidence 를 모두 덮는다 — 한쪽만 보여주면 답변 노드의 verdict 가 그쪽으로 쏠린다 (슬라이스 7 실측).",
   "items": [
     {
       "id": "EX-1",
       "category": "food_type",
       "question": "두유에 과일즙을 넣으면 어떤 식품유형인가요?",
-      "expectedTools": ["lookup_food_type"],
+      "expectedTools": [
+        "lookup_food_type"
+      ],
       "expectedEscalation": null,
       "answerSketch": "가공두유다. 원액두유나 두류가공품의 추출액에 과일·채소즙 등을 가한 것(두류고형분 1.4% 이상)을 가공두유라 한다.",
-      "citations": ["FDC-028"],
+      "citations": [
+        "FDC-028"
+      ],
       "teaches": "유형 정의를 그대로 인용하고, 정의에 붙은 수치(두류고형분 1.4% 이상)를 빼먹지 않는다"
     },
     {
       "id": "EX-2",
       "category": "ad_claims",
       "question": "'슈퍼푸드 유자'라고 광고해도 되나요?",
-      "expectedTools": ["lookup_ad_claims"],
+      "expectedTools": [
+        "lookup_ad_claims"
+      ],
       "expectedEscalation": null,
       "answerSketch": "고시가 슈퍼푸드를 직접 예시로 든다 — 정의와 종류가 명확하지 않고 객관적·과학적 근거가 충분하지 않은 용어로 다른 제품보다 우수하다고 오인시키는 표시·광고에 해당한다.",
-      "citations": ["UNF-012"],
+      "citations": [
+        "UNF-012"
+      ],
       "teaches": "된다/안 된다로 끝내지 않고 어느 조문 때문인지 함께 준다 (PRD UC-4)"
     },
     {
@@ -32,6 +40,20 @@
       "answerSketch": "수입신고·통관은 이 에이전트의 소관이 아니다. 근거를 조회하지 않고 어디에 물어야 하는지 알려주며 넘긴다.",
       "citations": [],
       "teaches": "소관 밖은 판정 단계에서 걸러 도구를 한 번도 부르지 않는다 (PLAN D3)"
+    },
+    {
+      "id": "EX-4",
+      "category": "food_type",
+      "question": "히비스커스 꽃잎을 음료 원료로 쓸 수 있나요?",
+      "expectedTools": [
+        "lookup_food_type"
+      ],
+      "expectedEscalation": "no_evidence",
+      "answerSketch": "근거에 히비스커스는 이름으로 나오지 않는다. 식품에 사용할 수 있는 원료의 목록은 [별표 1]과 같다고만 하고 그 별표는 조회 범위에 없다 — 가부는 목록을 봐야 갈린다.",
+      "citations": [
+        "FDC-060"
+      ],
+      "teaches": "no_evidence 의 자리 — 질문이 지목한 원료가 근거에 이름으로 없고 근거가 주어지지 않은 [별표 1] 목록을 가리킨다. 정보가 모자란 조건부 답변(EX-1·EX-2)과 구분된다 (PLAN D3·D10)"
     }
   ]
 }
