@@ -11,7 +11,8 @@
 
 ## 현재 상태
 
-1단계 「근거 문서와 평가셋」 진행 중. 슬라이스 1(법제처 API 수집)·2(공전 수집)·3(조회 도구 4종)·4(평가셋 18문항) 완료.
+1단계 「근거 문서와 평가셋」 진행 중. 슬라이스 1(법제처 API 수집)·2(공전 수집)·3(조회 도구 4종)·
+4(평가셋 18문항)·5(최소 파이프라인) 완료. **환각 검증과 넘기기 분리는 아직 없다** (슬라이스 6·7).
 
 ## 실행
 
@@ -21,7 +22,12 @@ uv run python collect_code.py   # 식품안전나라 공전 서비스 — 식품
 uv run python tools.py          # 조회 도구 4종 자체 점검
 uv run python tools.py lookup_food_type "유자즙 28%"   # 도구 하나를 직접 호출
 uv run python validate_goldenset.py                  # 평가셋 스키마·분포·중복·goldCheck 검증
+
+uv run python -m agent "유자즙 28% 음료를 유자주스로 팔아도 되나요?"   # 답변 + 호출 도구 + 인용 근거
+uv run python -m agent --goldenset --out data/runs/slice5.json       # 평가셋 전 문항 관통
 ```
+
+에이전트 실행에는 `OPENAI_API_KEY` 가 필요하다. 모델은 `OPENAI_MODEL` 로 바꾼다 (기본 `gpt-4o-mini`).
 
 수집 스크립트 둘은 받은 원문을 사실 단위 청크로 자른다. 산출물은 `data/corpus/` 에 있고
 **커밋되어 있으므로 다시 받지 않아도 된다** — 다시 받으면 스냅샷이 오늘 날짜로 갱신되고
@@ -75,12 +81,14 @@ sources.py                수집 대상 목록과 범위 밖 주제
 corpus.py                 청크 로더 — 본문과 별표를 한 목록으로 (별표는 여기서 청크가 된다)
 tools.py                  카테고리별 근거 조회 도구 4종 + 자체 점검
 validate_goldenset.py     평가셋 검증기 (스키마·분포·중복·goldCheck·금지 표현)
+agent.py                  LangGraph 파이프라인 — 판정 → 근거 조립 → 답변 + CLI
 data/goldenset.json       채점용 평가셋 18문항 (기대 도구·필수 사실·금지 표현·gold·goldCheck)
 data/prompt-examples.json 프롬프트 예시용 3문항 — **채점에 넣지 않는다**
 data/corpus/<CODE>.json   자료별 청크
 data/corpus/tables-*.json 고시 별표 (표시사항별 세부표시기준, 첨가물 표시 별표 등)
 data/corpus/collection-report.json      법제처 수집 리포트
 data/corpus/collection-report-fsd.json  공전 수집 리포트 (항목별 청크 수·미시행 개정)
+data/runs/slice5.json     슬라이스 5 관통 기록 (문항별 도구·근거 ID·답변) — 기준 측정의 출발점
 .cache/fsd/               받은 공전 PDF (gitignore — 4.8MB 짜리가 있다)
 ```
 
