@@ -32,7 +32,10 @@
 못 넘겼다.** 회차별 기록과 남은 걸림돌(채점기의 인용 대조가 답변을 못 따라오는 자리)은
 [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) 에 있다.
 
-남은 것: streamlit 데모(슬라이스 11) · REPORT.md(12) · 제출 점검(13).
+데모 화면은 `app.py` 에 있다 — 답변 · 호출한 도구 · **인용한 조문 원문(법제처 링크)** ·
+환각 검증 결과가 한 화면에 나오고, 넘긴 답변에는 어느 갈래로 넘겼는지 배지가 붙는다 (PRD S7).
+
+남은 것: 슬라이스 10 마무리 · REPORT.md(12) · 제출 점검(13).
 
 ## 실행
 
@@ -53,6 +56,10 @@ uv run python evaluate.py --reference                 # 모범 답안 채점 = S
 uv run python evaluate.py --negative                  # 망친 답변이 0점인지 역대조
 uv run python evaluate.py --score data/runs/slice7.json   # 기록된 실행을 채점
 uv run python evaluate.py --out data/runs/baseline.json   # 파이프라인을 돌려 채점
+uv run python evaluate.py --against data/runs/r4-c.json --out data/runs/next.json
+                                                      # 직전 회차와 개선 축을 대조하고 (두 축이면 거부) 측정
+
+uv run streamlit run app.py                           # 데모 화면 (http://127.0.0.1:8501)
 ```
 
 에이전트 실행에는 `OPENAI_API_KEY` 가 필요하다. 모델은 `OPENAI_MODEL` 로 바꾼다 (기본 `gpt-4o-mini`).
@@ -112,6 +119,7 @@ corpus.py                 청크 로더 — 본문과 별표를 한 목록으로
 tools.py                  카테고리별 근거 조회 도구 4종 + 자체 점검
 validate_goldenset.py     평가셋 검증기 (스키마·분포·중복·goldCheck·금지 표현)
 verify.py                 환각 검증 규칙 — 수치·조문·유형명을 근거와 대조 + 자체 확인
+app.py                    streamlit 데모 — 답변·도구·인용 원문·검증을 한 화면에 (PRD S7)
 evaluate.py               채점기 — S1(집합)·S2(필수 사실 LLM + 금지 표현 규칙)·S3(verify 재사용)·S4(넘기기)
 agent.py                  LangGraph 파이프라인 — 판정 → 근거 조립 → 답변 → 검증 (+재생성 1회) → 넘기기 + CLI
 data/goldenset.json       채점용 평가셋 18문항 (기대 도구·필수 사실·금지 표현·gold·goldCheck)
