@@ -37,6 +37,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from dataclasses import dataclass, field
@@ -127,15 +128,50 @@ def _judge_llm():
     )
 
 
+# 인용을 쪼개는 자리. 채점기는 답변의 여러 줄에서 한 문장을 만들어 오므로 **이어진 한 덩어리를
+# 요구하면 옳은 인용이 떨어진다** (슬라이스 10 실측: LB-1 은 답변이 1)~14) 를 다 적는데
+# 채점기 인용이 10)·11) 을 건너뛰어 베껴 10회 모두 0점).
+_QUOTE_SPLIT = re.compile(r"[,;、…\n]|\.{2,}")
+_FRAG_TRIM = re.compile(r"^[\s.·ㆍ)\]]+|[\s.·ㆍ(\[]+$")
+_MIN_FRAG = 2  # 정규화 뒤 이보다 짧은 조각은 어디에나 있어 대조 값이 없다
+
+
+def quote_fragments(quote: str) -> list[str]:
+    """인용을 대조 단위로 쪼갠다. 정규화 **전에** 쪼갠다 — `norm` 이 「·」를 지우고 나면
+    「표시·광고」와 「표시 또는 광고」를 가를 자리가 사라진다."""
+    out = []
+    for raw in _QUOTE_SPLIT.split(quote):
+        for part in re.split(r"[·ㆍ]", _FRAG_TRIM.sub("", raw)):
+            n = norm(_FRAG_TRIM.sub("", part))
+            if len(n) >= _MIN_FRAG:
+                out.append(n)
+    return out
+
+
 def quote_grounded(quote: str, answer: str) -> bool:
     """채점기가 짚은 자리가 답변에 **실제로 있는가**. 규칙 층이다 — LLM 을 태우지 않는다.
 
     D12 가 S2 를 두 층으로 나눈 것과 같은 이유로, LLM 판정 위에 규칙 한 겹을 더 얹는다.
     실측에서 채점기는 답변에 없는 사실을 「담았다」고 하면서 **인용은 필수 사실 문장을 그대로
     베껴 왔다**. 인용이 답변에 있는지 대조하면 그 자리가 기계로 드러난다.
-    `tools.norm` 으로 정규화하므로 부호·띄어쓰기 차이는 봐준다.
+
+    **조각 대조 + 순서 요구** (슬라이스 10). 이어진 부분 문자열만 보면 옳은 인용이 떨어진다 —
+    열거 가운데를 건너뛴 인용 · 마침표 하나 · 「표시·광고」↔「표시 또는 광고」가 전부 그랬다.
+    그렇다고 조각이 **흩어져 있어도** 통과시키면 슬라이스 9가 막은 거짓 통과(필수 사실 문장을
+    그대로 베낀 인용)가 되살아나므로, 조각이 답변에 **나온 순서대로** 있을 것을 요구한다.
+    `--negative` 7건과 `--reference` 가 이 균형을 지킨다.
     """
-    return bool(norm(quote)) and norm(quote) in norm(answer)
+    frags = quote_fragments(quote)
+    if not frags:
+        return False
+    body = norm(answer)
+    at = 0
+    for frag in frags:
+        found = body.find(frag, at)
+        if found < 0:
+            return False
+        at = found + len(frag)
+    return True
 
 
 def judge_facts(question: str, answer: str, facts: list[dict], llm=None) -> list[dict]:
@@ -452,19 +488,24 @@ def record_rows(items: list[dict], path: Path) -> list[Row]:
     import agent
 
     data = json.loads(path.read_text(encoding="utf-8"))
-    by_id = {r["id"]: r for r in data["runs"]}
+    # 두 형식을 다 읽는다 — `agent --goldenset --out`(runs)과 채점기 자신의 기록(scores).
+    # 후자를 읽어야 **채점기를 고친 뒤 옛 회차를 다시 돌리지 않고 같은 잣대로 재채점**할 수 있다
+    # (슬라이스 10: 잣대를 바꾸면 기준선부터 다시 재야 하는데, 답변은 기록에 그대로 있다).
+    records = data.get("runs") or data["scores"]
+    by_id = {r["id"]: r for r in records}
     rows = []
     for item in items:
         rec = by_id.get(item["id"])
         if rec is None:
             raise SystemExit(f"기록에 문항이 없다: {item['id']} ({path})")
-        evidence, ids = _evidence_for(rec["question"], rec["tools"])
+        question = rec.get("question") or item["question"]
+        evidence, ids = _evidence_for(question, rec["tools"])
         if ids != rec["evidenceIds"]:
             print(f"  ! {item['id']}: 근거가 기록과 다르다 — 코퍼스가 바뀌었다")
         rows.append(
             Row(
                 id=item["id"],
-                question=rec["question"],
+                question=question,
                 tools=rec["tools"],
                 answer=rec["answer"],
                 escalation=rec.get("escalation"),
@@ -884,8 +925,11 @@ def main(argv: list[str]) -> int:
     if args.negative:
         return negative()
     if args.against:
-        if args.reference or args.score:
-            print("--against 는 파이프라인 실행에만 쓴다 (모범 답안·기록 채점은 설정이 없다)")
+        if args.reference:
+            print("--against 는 모범 답안 채점에 쓰지 않는다 (파이프라인을 안 돌려 설정이 없다)")
+            return 2
+        if args.score:
+            print("--against 는 파이프라인 실행에만 쓴다 (재채점은 기록에 박힌 설정을 그대로 쓴다)")
             return 2
         blocked = axis_guard(args.against)
         if blocked is not None:
