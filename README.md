@@ -5,14 +5,16 @@
 
 아이펠 AI 에이전트 1기 — 에이전트 팀 꾸리기_Agt1 5번 노드 「고객 응대 에이전트 만들기 [프로젝트]」
 
+- **제출 리포트 7항목: [REPORT.md](REPORT.md)**
 - 요구사항: [PRD.md](PRD.md) · 작업계획: [PLAN.md](PLAN.md)
 - 수집 기록: [docs/COLLECT-NOTES.md](docs/COLLECT-NOTES.md) · 카테고리 매핑표: [docs/CATEGORY-MAP.md](docs/CATEGORY-MAP.md)
 - 기준 측정: [docs/BASELINE.md](docs/BASELINE.md) · 개선 기록: [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md)
-- 배포 주소: (미정 — 슬라이스 11)
+- 배포 주소: 없음 (PRD 5절 — 공개 배포는 선택). 데모는 로컬에서 `uv run streamlit run app.py`
 
 ## 현재 상태
 
-1단계 완료(슬라이스 1~5), **2단계 「검증·측정·개선」 완료(슬라이스 6~10)**.
+1단계 완료(슬라이스 1~5), 2단계 「검증·측정·개선」 완료(슬라이스 6~10),
+**3단계 데모·리포트(슬라이스 11~12)까지 완료**.
 법제처 API 수집 · 공전 수집 · 조회 도구 4종 · 평가셋 18문항 ·
 `판정 → 근거 조립 → 답변 → 검증 → (넘기기)` 파이프라인이 돌아간다. 넘기기는 두 갈래로
 갈린다 — 소관 밖(`out_of_scope`)은 판정 노드가, 소관이지만 근거에 답이 없는 것
@@ -36,8 +38,12 @@
 
 데모 화면은 `app.py` 에 있다 — 답변 · 호출한 도구 · **인용한 조문 원문(법제처 링크)** ·
 환각 검증 결과가 한 화면에 나오고, 넘긴 답변에는 어느 갈래로 넘겼는지 배지가 붙는다 (PRD S7).
+화면 캡처는 [REPORT.md](REPORT.md) 6절과 `docs/img/`.
 
-남은 것: REPORT.md(슬라이스 12) · 제출 점검(13).
+과제가 요구하는 7항목(주제·카테고리 설계·평가셋·측정 결과·구조도·데모·회고)은
+**[REPORT.md](REPORT.md)** 에 있다.
+
+남은 것: 제출 점검(슬라이스 13).
 
 ## 실행
 
@@ -136,6 +142,8 @@ data/runs/slice6.json     슬라이스 6 관통 기록 (+ 위반 목록·재생�
 data/runs/slice7.json     슬라이스 7 관통 기록 (+ 넘기기 갈래와 기대 라벨)
 data/runs/slice8-reference.json  모범 답안 채점 기록 (S5) — 문항별 S1~S4 와 왜 0점인지
 docs/VERIFY-NOTES.md      검증 규칙이 무엇을 잡고 무엇을 못 잡나 (실측과 한계)
+docs/img/demo-*.png       데모 화면 캡처 (REPORT 6절)
+REPORT.md                 제출 리포트 7항목 — 주제·카테고리·평가셋·측정·구조도·데모·회고
 .cache/fsd/               받은 공전 PDF (gitignore — 4.8MB 짜리가 있다)
 ```
 
@@ -149,5 +157,5 @@ docs/VERIFY-NOTES.md      검증 규칙이 무엇을 잡고 무엇을 못 잡나
 - [ ] `uv run python -m agent "<질문>"` 이 답변 + 호출 도구 + 인용 근거를 출력한다
 - [ ] `uv run python evaluate.py` 가 S1·S2 수치를 출력하고 기준(≥0.75)을 넘는다
 - [ ] `uv run streamlit run app.py` 데모에서 답변·근거·검증 결과가 한 화면에 보인다
-- [ ] `REPORT.md` 7항목 (주제·카테고리 설계·평가셋·측정 결과·구조도·데모·회고)
+- [ ] `REPORT.md` 7항목 (주제·카테고리 설계·평가셋·측정 결과·구조도·데모·회고) — Mermaid 가 렌더되는지 포함
 - [ ] `.env` 가 커밋되지 않았고 저장소에 키 문자열이 없다
